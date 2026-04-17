@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive PRD - 仓库切换与独立列表页</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script>
+        // Ensure iframe scrollbar is hidden globally
+        window.hideIframeScrollbar = function(iframe) {
+            try {
+                const doc = iframe.contentDocument || iframe.contentWindow.document;
+                const style = doc.createElement('style');
+                style.textContent = `
+                    ::-webkit-scrollbar { display: none !important; width: 0 !important; background: transparent !important; }
+                    * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+                `;
+                doc.head.appendChild(style);
+            } catch(e) {}
+        };
+    </script>
+    <style>
+        /* Mermaid Defense Patterns */
+        div[id^="dmermaid"] { 
+            position: absolute !important; 
+            top: -9999px !important; 
+            visibility: hidden !important; 
+        }
+        
+        /* Layout */
+        body { margin: 0; overflow: hidden; background-color: #f8fafc; }
+        .dark body { background-color: #0f172a; color: #f1f5f9; }
+        
+        #app { display: flex; height: 100vh; width: 100vw; }
+        
+        /* TOC */
+        #toc-panel {
+            width: 260px;
+            background: #ffffff;
+            border-right: 1px solid #e2e8f0;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            padding: 20px 0;
+        }
+        .dark #toc-panel { background: #1e293b; border-color: #334155; }
+        #toc-panel.collapsed { width: 0; padding: 0; border: none; overflow: hidden; }
+        
+        .toc-item {
+            padding: 8px 20px;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 14px;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        .dark .toc-item { color: #94a3b8; }
+        .toc-item:hover { background: #f1f5f9; color: #0f172a; }
+        .dark .toc-item:hover { background: #334155; color: #f8fafc; }
+        .toc-item.active {
+            color: #2563eb;
+            background: #eff6ff;
+            border-left-color: #2563eb;
+            font-weight: 600;
+        }
+        .dark .toc-item.active {
+            color: #60a5fa;
+            background: #1e3a8a;
+            border-left-color: #60a5fa;
+        }
+        .toc-h2 { padding-left: 20px; }
+        .toc-h3 { padding-left: 35px; font-size: 13px; }
+        .toc-h4 { padding-left: 50px; font-size: 12px; }
+
+        /* Content */
+        #main-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+            scroll-behavior: smooth;
+        }
+        
+        .markdown-body {
+            max-width: 800px;
+            margin: 0 auto;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+        }
+        
+        .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: 600;
+        }
+        .markdown-body h1 { font-size: 2em; padding-bottom: 0.3em; border-bottom: 1px solid #e2e8f0; }
+        .dark .markdown-body h1 { border-color: #334155; }
+        .markdown-body h2 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid #e2e8f0; }
+        .dark .markdown-body h2 { border-color: #334155; }
+        .markdown-body h3 { font-size: 1.25em; }
+        
+        .markdown-body p { margin-top: 0; margin-bottom: 16px; }
+        .markdown-body ul, .markdown-body ol { padding-left: 2em; margin-bottom: 16px; }
+        .markdown-body table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        .markdown-body th, .markdown-body td { border: 1px solid #e2e8f0; padding: 8px 12px; }
+        .dark .markdown-body th, .dark .markdown-body td { border-color: #334155; }
+        .markdown-body th { background: #f8fafc; }
+        .dark .markdown-body th { background: #1e293b; }
+        
+        .markdown-body code { background: #f1f5f9; padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: #db2777; }
+        .dark .markdown-body code { background: #334155; color: #f472b6; }
+        .markdown-body pre { background: #1e293b; padding: 16px; border-radius: 8px; overflow-x: auto; color: #f8fafc; }
+        .markdown-body pre code { background: transparent; padding: 0; color: inherit; }
+
+        /* Prototype Panel */
+        #prototype-panel {
+            width: 800px;
+            background: #e2e8f0;
+            border-left: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+            min-width: 0; /* 防撑破 */
+            overflow: hidden;
+        }
+        .dark #prototype-panel { background: #0f172a; border-color: #334155; }
+        
+        /* Iframe Scaling */
+        .iframe-container {
+            width: 800px;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #prototype-iframe {
+            width: 1440px;
+            height: calc(100% * (1440 / 800));
+            transform: scale(calc(800 / 1440));
+            transform-origin: top left;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: none;
+            background: #fff;
+            transition: opacity 0.15s ease;
+        }
+
+        /* Floating Controls */
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 50;
+        }
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #475569;
+            transition: all 0.2s;
+        }
+        .dark .control-btn {
+            background: #1e293b;
+            border-color: #334155;
+            color: #94a3b8;
+        }
+        .control-btn:hover { transform: scale(1.05); }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <button class="control-btn" id="btn-toggle-toc" title="Toggle TOC">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <button class="control-btn" id="btn-toggle-theme" title="Toggle Dark Mode">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+    </div>
+
+    <div id="app">
+        <!-- TOC -->
+        <div id="toc-panel">
+            <div style="padding: 0 20px 10px 20px; font-weight: bold; font-size: 18px; margin-top: 40px;">目录</div>
+            <div id="toc-content"></div>
+        </div>
+        
+        <!-- Main Content -->
+        <div id="main-scroll">
+            <div class="markdown-body" id="md-content"></div>
+            <!-- Bottom padding for scrolling -->
+            <div style="padding-bottom: 100vh;"></div>
+        </div>
+        
+        <!-- Prototype -->
+        <div id="prototype-panel">
+            <div class="iframe-container">
+                <iframe id="prototype-iframe" src="./Prototypes/home.html" onload="hideIframeScrollbar(this)"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- The Markdown Content -->
+    <script type="text/markdown" id="raw-markdown">
+# 产品需求文档 (PRD)
+
+## 1. 文档概述 (Document Overview)
+
+### 1.1 文档信息
+* **需求名称**：仓库切换与独立列表页
+* **所属迭代**：2604_2
+* **文档状态**：起草中
+* **目标读者**：前端开发、测试工程师、UI 设计师
+
+### 1.2 修订历史
+| 版本 | 日期 | 修改内容 | 作者 |
+| :--- | :--- | :--- | :--- |
+| V1.0 | 2026-04-16 | 初始版本，定义独立列表页与阅读器内快捷切换逻辑。 | PM |
+
+## 2. 需求背景与目标 (Background & Objectives)
+
+### 2.1 当前痛点
+在当前的 PRD-Reader 系统中，多个代码/文档仓库的文件树会被堆积在一起显示。当配置的仓库数量增多时，左侧文件树会显得过于拥挤和混乱，导致产品经理或开发者在寻找特定项目的文件时，需要耗费大量时间进行滚动和辨识。跨项目查阅体验不连贯。
+
+### 2.2 业务目标
+1. **降低认知负荷**：通过将仓库选择从具体文件阅读中剥离出来，提供一个清晰的“独立仓库列表页”，让用户在进入具体文档前能够快速定位目标项目。
+2. **提升跨项目查阅效率**：在阅读器内（Reader）的左上角增加仓库切换的快捷入口，支持在不丢失阅读沉浸感的前提下，通过下拉列表快速切换仓库或返回仓库列表页。
+
+## 3. 名词字典 (Glossary)
+
+| 名词 (Term) | 定义说明 (Definition) | 备注 (Notes) |
+| :--- | :--- | :--- |
+| **独立仓库列表页** | 系统的默认首页（根路由 \`/\`），以网格卡片的形式展示当前系统配置的所有白名单仓库。 | 替代了原先直接展示混合文件树的逻辑。 |
+| **阅读器 (Reader)** | 核心工作区，仅当 URL 中携带明确的 \`?repo=\` 参数时才渲染，并且强制只展示该指定仓库的文件树。 | 保证阅读的沉浸感与隔离性。 |
+| **白名单仓库** | 由系统管理员在后台配置的允许公开访问的 GitHub/GitLab 仓库列表。 | 本次需求的唯一数据来源。 |
+
+## 4. 核心业务流程 (Business Flow)
+请参考配套的业务流程图：[Business_Flow.md](./Flow/Business_Flow.md)。
+核心流转逻辑如下：
+1. **路由分发**：系统首先根据 URL 判断是否携带 \`?repo=\` 参数。
+2. **列表页展示**：若无参数，则渲染独立列表页。读取白名单配置，若为空则显示提示；若有数据，则渲染卡片网格。用户点击卡片跳转至阅读器。
+3. **阅读器切换**：在阅读器内，用户点击侧边栏左上角仓库名称呼出下拉菜单。选择其他仓库将更新 URL 参数并重新拉取数据，同时默认加载 \`README.md\`；选择“返回”则清空参数跳回列表页。
+
+## 5. 数据流与状态流转 (Data & State Flow)
+
+### 5.1 实体关系说明 (ER Diagram)
+本次需求不涉及新增后端实体，主要涉及前端路由状态与系统配置的映射关系。
+
+\`\`\`mermaid
+erDiagram
+    SYSTEM_CONFIG {
+        array whitelistRepos "后台配置的白名单仓库列表"
+    }
+    URL_ROUTER {
+        string path "当前路径 (如 /)"
+        string repo "查询参数 ?repo="
+        string file "查询参数 ?file="
+    }
+    READER_STORE {
+        string currentRepo "当前聚焦的仓库"
+        array treeData "当前展示的单仓库树结构"
+    }
+    
+    SYSTEM_CONFIG ||--|{ URL_ROUTER : "决定列表页展示内容"
+    URL_ROUTER ||--o| READER_STORE : "通过?repo=控制数据拉取范围"
+\`\`\`
+
+### 5.2 状态机约束
+1. **单一数据源约束**：仓库列表数据必须**仅**来源于现有的 \`configStore\` 中的白名单配置，绝不允许前端私自调用 API 获取用户的全量仓库。
+2. **参数重置机制**：当通过卡片或下拉菜单切换仓库时，必须在更新 \`?repo=\` 参数的同时，强制清空 \`?file=\` 参数，以避免尝试在新仓库中加载旧仓库的文件。
+3. **向后兼容重定向**：若用户访问旧的分享链接（仅有 \`?file=\` 无 \`?repo=\`），系统需直接重定向至根路由 \`/\` 的仓库列表页。
+
+## 6. 功能模块与页面细节 (Features & UI Details)
+
+### 6.1 独立仓库列表页 (Home View)
+- **区域介绍与规则**：作为系统的默认入口（根路由），负责引导用户选择目标工作区。
+- **展示元素定义**：
+
+| 元素名称 | 逻辑 (数据来源/计算逻辑) | 限制与格式 |
+| :--- | :--- | :--- |
+| 右上角设置入口 | 静态路由链接 | 提供进入 \`/admin\` 的快捷入口（Gear 图标）。 |
+| 头部信息区 | 静态展示 | 包含 PRD-Reader 的系统 Logo 或系统名称，以及提示文案。 |
+| 仓库卡片网格 | \`遍历 configStore.whitelistRepos\` | 采用响应式 CSS Grid 布局，桌面端展示 3-5 列。 |
+| 仓库卡片 (Item) | \`单个白名单仓库对象\` | 必须包含首字母彩色占位图。展示仓库名称 \`name\`、路径 \`path\` 和默认分支 \`default_branch\`。 |
+| 空状态提示 | \`当 whitelistRepos 为空时显示\` | 友好的插画/图标及引导配置的文案。 |
+
+- **交互逻辑**：点击任意仓库卡片，触发路由跳转，URL 附加 \`?repo=[选中的仓库标识 id/name]\`，并渲染 Reader 页面。系统默认寻找并打开该仓库根目录下的 \`README.md\` 文件。
+
+### 6.2 阅读器：仓库切换触发器区 (Sidebar Top Area)
+- **区域介绍与规则**：集成在左侧侧边栏 (Sidebar) 的最顶部，取代原有的静态系统名称，提供明确的当前上下文指示及下拉交互入口。
+- **展示元素定义**：
+
+| 元素名称 | 逻辑 (数据来源/计算逻辑) | 限制与格式 |
+| :--- | :--- | :--- |
+| 当前仓库名称 | \`从 URL 的 ?repo= 参数中获取\` | 包含仓库 Icon (☁️)，字体需醒目（如加粗），字号适中。 |
+| 下拉指示箭头 | 静态展示 | 位于仓库名称右侧的向下小箭头（Chevron Down）。 |
+
+- **交互逻辑**：鼠标 Hover 时可有微弱高亮反馈，点击该区域弹出“仓库下拉菜单”。
+
+### 6.3 阅读器：仓库下拉菜单 (Dropdown Menu)
+- **区域介绍与规则**：悬浮于页面之上的轻量级菜单，提供快捷切换能力。
+- **展示元素定义**：
+
+| 元素名称 | 逻辑 (数据来源/计算逻辑) | 限制与格式 |
+| :--- | :--- | :--- |
+| 浮层容器 | \`点击触发器后显示\` | 带有阴影和圆角的绝对定位容器。 |
+| 仓库列表项 | \`遍历 configStore.whitelistRepos\` | 包含仓库显示名称 \`name\` 及其路径 \`path\`。 |
+| 选中态标识 | \`若列表项 == 当前 URL 的 repo，则显示\` | 在当前阅读的仓库项旁边显示对勾（Check）图标，文字高亮。 |
+| 分割线 | 静态展示 | 位于仓库列表与底部操作区之间。 |
+| 返回列表页按钮 | 静态展示 | 位于分割线下方，文案如“← 返回所有项目”。 |
+
+- **交互逻辑**：
+  - 点击“非当前”的仓库列表项：关闭下拉菜单 -> 更新 URL \`?repo=\` 并清空 \`?file=\` -> 触发 ReaderStore 重新拉取对应仓库的文件树 -> 展示 Loading 状态 -> 默认渲染根目录下的 \`README.md\` 文件。
+  - 点击“返回列表页按钮”：关闭下拉菜单 -> 清空 URL 中所有查询参数 -> 路由跳转回首页（独立列表页）。
+
+### 6.4 阅读器：单仓库视图限制
+- **区域介绍与规则**：底层数据加载逻辑的调整，对用户透明但至关重要。
+- **逻辑规则**：Reader 组件在挂载（Mount）或 \`?repo=\` 参数变化时，触发的 \`fetchTree\` 动作必须被严格限制为**仅拉取当前 \`repo\` 对应的数据**。左侧文件树中不再出现多个顶层仓库节点，根节点直接为该单一仓库的文件和文件夹。
+
+## 7. 非功能性需求 (NFR)
+1. **响应式设计**：独立仓库列表页的网格布局必须完美适配桌面端和移动端，确保卡片宽度在不同分辨率下合理换行。
+2. **性能优化**：仓库切换时，应利用 React 的机制实现局部重渲染，避免导致整个应用级别的硬刷新（Hard Reload），保持 SPA 的流畅体验。
+
+## 8. 附录与相关链接
+* [需求背景](./Background/Requirement_Background.md)
+* [用户故事](./Background/User_Stories.md)
+* [业务流程图](./Flow/Business_Flow.md)
+* [页面结构设计](./Page_Structure.md)
+
+    </script>
+
+    <script>
+        // 1. Initialize
+        document.getElementById('btn-toggle-toc').addEventListener('click', () => {
+            document.getElementById('toc-panel').classList.toggle('collapsed');
+        });
+        
+        document.getElementById('btn-toggle-theme').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+
+        // 2. Parse Markdown
+        const rawMd = document.getElementById('raw-markdown').textContent;
+        
+        // Extract Mermaid blocks before marked parsing to prevent mangling
+        const mermaidBlocks = [];
+        let mdForParsing = rawMd.replace(/\x60\x60\x60mermaid\n([\s\S]*?)\x60\x60\x60/g, (match, code) => {
+            const id = 'mermaid-' + mermaidBlocks.length;
+            mermaidBlocks.push({ id, code });
+            return `<div id="${id}" class="mermaid-placeholder"></div>`;
+        });
+
+        document.getElementById('md-content').innerHTML = marked.parse(mdForParsing);
+
+        // 3. Build TOC & Add IDs
+        const headings = document.getElementById('md-content').querySelectorAll('h2, h3, h4');
+        const tocContent = document.getElementById('toc-content');
+        
+        headings.forEach((heading, index) => {
+            const id = 'sec-' + index;
+            heading.id = id;
+            
+            const level = heading.tagName.toLowerCase();
+            const div = document.createElement('div');
+            div.className = `toc-item toc-${level}`;
+            div.textContent = heading.textContent;
+            div.setAttribute('data-target', id);
+            
+            // Map section to prototype file
+            let prototypeFile = '';
+            let hash = '';
+            const text = heading.textContent;
+            
+            if (text.includes('6.1')) {
+                prototypeFile = 'home.html';
+            } else if (text.includes('6.2') || text.includes('6.4')) {
+                prototypeFile = 'index.html';
+            } else if (text.includes('6.3')) {
+                prototypeFile = 'index.html';
+                hash = '#repoDropdown';
+            }
+            
+            if (prototypeFile) {
+                div.setAttribute('data-prototype', prototypeFile);
+                if (hash) div.setAttribute('data-hash', hash);
+            }
+            
+            div.addEventListener('click', () => {
+                heading.scrollIntoView({ behavior: 'smooth' });
+            });
+            
+            tocContent.appendChild(div);
+        });
+
+        // 4. Render Mermaid (Strict Serial with Defense)
+        mermaid.initialize({ startOnLoad: false, htmlLabels: true });
+        
+        async function renderMermaid() {
+            for (let i = 0; i < mermaidBlocks.length; i++) {
+                const { id, code } = mermaidBlocks[i];
+                try {
+                    // Entity Decode & Patch
+                    let cleanCode = code
+                        .replace(/&gt;/g, '>')
+                        .replace(/&lt;/g, '<')
+                        .replace(/&amp;/g, '&')
+                        .replace(/&quot;/g, '"')
+                        .replace(/&#39;/g, "'")
+                        .replace(/\u200B/g, '')
+                        .split('||--o{').join(' ||--o{ '); // Patch ER diagrams
+                        
+                    const { svg } = await mermaid.render('d' + id, cleanCode);
+                    document.getElementById(id).innerHTML = svg;
+                    
+                    // Clean ghost node
+                    const ghost = document.getElementById('d' + id);
+                    if (ghost) ghost.remove();
+                } catch (e) {
+                    console.error('Mermaid render error:', e);
+                    document.getElementById(id).innerHTML = `<div style="background:#fee2e2; color:#b91c1c; padding:10px; border-radius:4px;">Mermaid Error: ${e.message}</div>`;
+                    const ghost = document.getElementById('d' + id);
+                    if (ghost) ghost.remove();
+                }
+            }
+        }
+        renderMermaid();
+
+        // 5. Scroll Spy & Iframe Sync
+        const mainScroll = document.getElementById('main-scroll');
+        const sections = Array.from(headings);
+        const navItems = document.querySelectorAll('.toc-item');
+        let scrollDebounceTimer;
+
+        mainScroll.addEventListener('scroll', () => {
+            let current = '';
+            const mainRect = mainScroll.getBoundingClientRect();
+            
+            for (let i = sections.length - 1; i >= 0; i--) {
+                const section = sections[i];
+                const rect = section.getBoundingClientRect();
+                
+                if (rect.top <= mainRect.top + 150) {
+                    current = section.getAttribute('id');
+                    break;
+                }
+            }
+            
+            if (!current && sections.length > 0) {
+                current = sections[0].getAttribute('id');
+            }
+            
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-target') === current) {
+                    item.classList.add('active');
+                    
+                    // Iframe sync
+                    clearTimeout(scrollDebounceTimer);
+                    scrollDebounceTimer = setTimeout(() => {
+                        const prototypeFile = item.getAttribute('data-prototype');
+                        const hash = item.getAttribute('data-hash') || '';
+                        const iframe = document.getElementById('prototype-iframe');
+                        
+                        if (prototypeFile && iframe) {
+                            const baseUrl = window.location.href;
+                            const currentUrl = new URL(iframe.src, baseUrl);
+                            const newSrcRaw = `./Prototypes/${prototypeFile}${hash}`;
+                            const newUrl = new URL(newSrcRaw, baseUrl);
+                            
+                            const isSamePath = currentUrl.pathname === newUrl.pathname;
+                            if (isSamePath && currentUrl.hash === newUrl.hash) return;
+                            
+                            if (window.iframeUpdateTimeout) clearTimeout(window.iframeUpdateTimeout);
+                            
+                            window.iframeUpdateTimeout = setTimeout(() => {
+                                iframe.style.opacity = '0';
+                                
+                                setTimeout(() => {
+                                    iframe.src = newUrl.pathname + newUrl.search;
+                                    iframe.onload = null;
+                                    
+                                    iframe.onload = () => {
+                                        iframe.style.opacity = '1';
+                                        hideIframeScrollbar(iframe);
+                                        
+                                        try {
+                                            const iframeWin = iframe.contentWindow;
+                                            iframeWin.location.hash = newUrl.hash;
+                                        } catch(e) {}
+                                    };
+                                }, 150);
+                            }, 150);
+                        }
+                    }, 300);
+                }
+            });
+        });
+        
+        // Initial trigger
+        setTimeout(() => mainScroll.dispatchEvent(new Event('scroll')), 500);
+    </script>
+</body>
+</html>

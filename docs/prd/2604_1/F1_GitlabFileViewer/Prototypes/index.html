@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRD Reader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-pastel: #FDF4F5;
+            --sidebar-bg: #E8F3F1;
+            --accent-pink: #FFB5C2;
+            --accent-blue: #A2D2FF;
+            --accent-yellow: #FDE293;
+            --text-dark: #4A4E69;
+            --text-light: #9CA3AF;
+        }
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-pastel);
+            color: var(--text-dark);
+            overflow: hidden;
+        }
+        
+        .pill-shape { border-radius: 9999px; }
+        .soft-shadow { box-shadow: 0 10px 25px -5px rgba(162, 210, 255, 0.3); }
+        .card-shadow { box-shadow: 0 4px 15px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.05); }
+
+        /* Prose Customization */
+        .prose-soft h1 { font-family: 'Quicksand', sans-serif; font-size: 2.5rem; font-weight: 700; color: #4A4E69; margin-bottom: 2rem; display: inline-block; position: relative; z-index: 1; }
+        .prose-soft h1::after { content: ''; position: absolute; bottom: 4px; left: -10px; right: -10px; height: 12px; background: var(--accent-yellow); z-index: -1; border-radius: 10px; opacity: 0.7; }
+        .prose-soft h2 { font-family: 'Quicksand', sans-serif; font-size: 1.75rem; font-weight: 700; color: #4A4E69; margin-top: 3rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .prose-soft h2::before { content: '✿'; font-size: 1.2rem; color: var(--accent-pink); }
+        .prose-soft p { font-size: 1.1rem; line-height: 1.7; margin-bottom: 1.5rem; color: #5D607B; }
+        .prose-soft code { background: #FFFFFF; padding: 4px 10px; border-radius: 12px; font-weight: 700; color: #7B8CDE; border: 2px solid #F0F0F0; }
+        .prose-soft pre { background: #FFFFFF; padding: 1.5rem; border-radius: 24px; margin-bottom: 2rem; border: 2px solid var(--sidebar-bg); box-shadow: inset 0 2px 10px rgba(0,0,0,0.02); }
+        
+        .nav-item { font-weight: 600; padding: 0.75rem 1rem; border-radius: 16px; cursor: pointer; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); margin-bottom: 0.5rem; color: #6B7280; }
+        .nav-item:hover { background: #FFFFFF; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .nav-item.active { background: #FFFFFF; color: #4A4E69; box-shadow: 0 8px 20px rgba(162, 210, 255, 0.4); transform: translateY(-2px); }
+        
+        /* 隐藏滚动条 */
+        ::-webkit-scrollbar { display: none; width: 0; background: transparent; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 顶部导航栏收起交互 */
+        .header-container {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 45;
+        }
+        .header-collapsed {
+            transform: translateY(-100%);
+        }
+        .header-expanded {
+            transform: translateY(0);
+        }
+        .header-trigger {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            z-index: 40;
+        }
+        
+        /* 侧边栏收起交互相关样式 */
+        .sidebar-container {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 50;
+            padding: 12px;
+            width: 340px; /* 增加宽度以适应层级结构 */
+        }
+        /* 默认状态（收起，只留一点边边作为提示） */
+        .sidebar-collapsed {
+            transform: translateX(-320px); /* 340px 宽度，收起 320px，留出 20px */
+        }
+        /* 鼠标悬停在触发区或固定状态（展开） */
+        .sidebar-expanded {
+            transform: translateX(0);
+        }
+        /* 左侧隐形触发区域 */
+        .sidebar-trigger {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 40px;
+            z-index: 40;
+        }
+        /* 主内容区过渡 */
+        .main-content-transition {
+            transition: padding-left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .main-pl-collapsed {
+            padding-left: 20px; /* 收起时，主内容区稍微往左靠 */
+        }
+        .main-pl-expanded {
+            padding-left: 340px; /* 固定展开时，主内容区让出完整的侧边栏空间 */
+        }
+        
+        /* 图标按钮动画 */
+        .pin-btn {
+            transition: all 0.2s;
+        }
+        .pin-btn:hover {
+            transform: scale(1.1);
+        }
+        .pin-active {
+            color: var(--accent-pink);
+            background: #FFF;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        /* 目录树缩进 */
+        .tree-level-1 { padding-left: 0.5rem; }
+        .tree-level-2 { padding-left: 1.5rem; }
+        .tree-level-3 { padding-left: 2.5rem; }
+
+        /* 密码验证弹窗 */
+        .modal-overlay {
+            background-color: rgba(74, 78, 105, 0.4);
+            backdrop-filter: blur(4px);
+        }
+        .hidden-view { display: none !important; }
+    </style>
+</head>
+<body class="flex h-screen w-screen overflow-hidden relative">
+
+    <!-- 侧边栏隐形触发区域 (仅在非固定状态下有效) -->
+    <div id="sidebar-trigger" class="sidebar-trigger"></div>
+
+    <!-- 左侧侧边栏 (抽屉式) -->
+    <div id="sidebar-container" class="sidebar-container sidebar-collapsed">
+        <aside class="w-full bg-[var(--sidebar-bg)] rounded-[32px] flex flex-col h-full card-shadow overflow-hidden border-4 border-white relative">
+            
+            <!-- 头部 -->
+            <div class="h-24 flex items-center justify-between px-6 pt-4 shrink-0 border-b border-white/50">
+                <div class="bg-white px-4 py-2 rounded-full shadow-sm flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-[var(--accent-pink)]"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-[var(--accent-yellow)]"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-[var(--accent-blue)]"></div>
+                    <span class="font-bold text-[#4A4E69] ml-1 tracking-wide font-['Quicksand'] text-base">PRD Reader</span>
+                </div>
+                <!-- 固定/取消固定按钮 -->
+                <button id="pin-btn" class="pin-btn w-8 h-8 rounded-full flex items-center justify-center text-[#9CA3AF] hover:text-[#4A4E69]" title="固定/取消固定侧边栏">
+                    <i data-lucide="pin" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- 文件树容器 (层级结构) -->
+            <div class="flex-1 overflow-y-auto p-4 pt-4 relative">
+                
+                <!-- 下钻返回按钮 (默认隐藏) -->
+                <div id="back-to-parent" class="hidden flex items-center gap-2 px-2 py-2 mb-3 text-[var(--accent-blue)] font-bold cursor-pointer hover:bg-white/50 rounded-xl transition-colors" onclick="exitDirectory()">
+                    <div class="w-7 h-7 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    </div>
+                    <span id="back-text">返回上级</span>
+                </div>
+
+                <div id="tree-content">
+                    <!-- 仓库节点 (层级 1) -->
+                    <div class="tree-node mb-4" id="repo-1">
+                        <div class="flex items-center justify-between group px-2 py-2 hover:bg-white/50 rounded-xl transition-colors">
+                            <div class="flex items-center gap-2 text-[#4A4E69] font-bold cursor-pointer flex-1" onclick="toggleNode('node-repo-1', this)">
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-[#9CA3AF] transition-transform duration-200"></i>
+                                <i data-lucide="cloud" class="w-4 h-4 text-[var(--accent-blue)]"></i>
+                                前端核心项目
+                            </div>
+                            <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all">
+                                <button class="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[var(--accent-blue)] hover:bg-white" onclick="copyGitlabUrl('https://gitlab.com/company/frontend-core', event)" title="复制 GitLab 地址">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                </button>
+                                <button class="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[var(--accent-blue)] hover:bg-white" onclick="enterDirectory('repo-1', '前端核心项目')" title="进入此目录">
+                                    <i data-lucide="arrow-right-to-line" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 仓库内容 -->
+                        <div id="node-repo-1" class="mt-1">
+                            
+                            <!-- 文件夹节点 (层级 2) -->
+                            <div class="tree-node tree-level-1" id="folder-1">
+                                <div class="flex items-center justify-between group px-2 py-2 hover:bg-white/50 rounded-xl transition-colors">
+                                    <div class="flex items-center gap-2 text-[#6B7280] font-semibold cursor-pointer flex-1" onclick="toggleNode('node-folder-1', this)">
+                                        <i data-lucide="chevron-down" class="w-4 h-4 text-[#9CA3AF] transition-transform duration-200"></i>
+                                        <i data-lucide="folder" class="w-4 h-4 text-[var(--accent-yellow)]"></i>
+                                        需求文档 (v2.0)
+                                    </div>
+                                    <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all">
+                                        <button class="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[var(--accent-blue)] hover:bg-white" onclick="copyGitlabUrl('https://gitlab.com/company/frontend-core/-/tree/main/docs/v2.0', event)" title="复制 GitLab 地址">
+                                            <i data-lucide="copy" class="w-4 h-4"></i>
+                                        </button>
+                                        <button class="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[var(--accent-blue)] hover:bg-white" onclick="enterDirectory('folder-1', '需求文档 (v2.0)')" title="进入此目录">
+                                            <i data-lucide="arrow-right-to-line" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 文件夹内容 -->
+                                <div id="node-folder-1" class="mt-1">
+                                    <!-- 文件节点 (层级 3) -->
+                                    <div class="tree-level-2">
+                                        <div class="nav-item flex items-center justify-between group">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-7 h-7 rounded-lg bg-[#F3F4F6] flex items-center justify-center"><i data-lucide="file-text" class="w-3.5 h-3.5 text-[#9CA3AF]"></i></div>
+                                                <span class="text-sm">背景说明.md</span>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[#9CA3AF] hover:text-[var(--accent-blue)] hover:bg-gray-100 transition-all" onclick="copyGitlabUrl('https://gitlab.com/company/frontend-core/-/blob/main/docs/v2.0/background.md', event)" title="复制 GitLab 地址">
+                                                <i data-lucide="copy" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                        <div class="nav-item active flex items-center justify-between group">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-7 h-7 rounded-lg bg-[var(--accent-blue)] flex items-center justify-center"><i data-lucide="layout-template" class="w-3.5 h-3.5 text-white"></i></div>
+                                                <span class="text-sm">系统架构.md</span>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[#9CA3AF] hover:text-[var(--accent-blue)] hover:bg-gray-100 transition-all" onclick="copyGitlabUrl('https://gitlab.com/company/frontend-core/-/blob/main/docs/v2.0/architecture.md', event)" title="复制 GitLab 地址">
+                                                <i data-lucide="copy" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                        <div class="nav-item flex items-center justify-between group">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-7 h-7 rounded-lg bg-[#F3F4F6] flex items-center justify-center"><i data-lucide="monitor" class="w-3.5 h-3.5 text-[#9CA3AF]"></i></div>
+                                                <span class="text-sm">交互原型.html</span>
+                                            </div>
+                                            <button class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[#9CA3AF] hover:text-[var(--accent-blue)] hover:bg-gray-100 transition-all" onclick="copyGitlabUrl('https://gitlab.com/company/frontend-core/-/blob/main/docs/v2.0/prototype.html', event)" title="复制 GitLab 地址">
+                                                <i data-lucide="copy" class="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 仓库节点 2 -->
+                    <div class="tree-node mb-4" id="repo-2">
+                        <div class="flex items-center justify-between group px-2 py-2 hover:bg-white/50 rounded-xl transition-colors">
+                            <div class="flex items-center gap-2 text-[#4A4E69] font-bold cursor-pointer flex-1" onclick="toggleNode('node-repo-2', this)">
+                                <i data-lucide="chevron-right" class="w-4 h-4 text-[#9CA3AF] transition-transform duration-200"></i>
+                                <i data-lucide="server" class="w-4 h-4 text-[var(--accent-blue)]"></i>
+                                后端服务
+                            </div>
+                            <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all">
+                                <button class="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[var(--accent-blue)] hover:bg-white" onclick="copyGitlabUrl('https://gitlab.com/company/backend-services', event)" title="复制 GitLab 地址">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                </button>
+                                <button class="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[var(--accent-blue)] hover:bg-white" onclick="enterDirectory('repo-2', '后端服务')" title="进入此目录">
+                                    <i data-lucide="arrow-right-to-line" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="node-repo-2" class="mt-1 hidden">
+                            <!-- 略... -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin 入口 (固定在底部) -->
+            <div class="shrink-0 p-4 border-t-2 border-white/50 bg-[var(--sidebar-bg)] z-10 relative">
+                <button onclick="showAuthModal()" class="w-full nav-item flex items-center gap-3 text-[#9CA3AF] hover:text-[#4A4E69] m-0">
+                    <div class="w-8 h-8 rounded-xl bg-[#F3F4F6] flex items-center justify-center"><i data-lucide="settings" class="w-4 h-4"></i></div>
+                    后台配置
+                </button>
+            </div>
+            
+            <!-- 边缘装饰（收起时露出的部分） -->
+            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-16 bg-white/50 rounded-l-full cursor-pointer hover:bg-white transition-colors" title="展开侧边栏"></div>
+        </aside>
+    </div>
+
+    <!-- 右侧主内容区 -->
+    <div id="main-content" class="flex-1 h-full p-3 main-content-transition main-pl-collapsed flex relative">
+        <main class="flex-1 flex flex-col relative bg-white rounded-[32px] card-shadow overflow-hidden border-4 border-[var(--bg-pastel)]">
+            
+            <!-- 顶部隐形触发区域 (仅在非固定状态下有效) -->
+            <div id="header-trigger" class="header-trigger"></div>
+
+            <!-- 顶部导航条 -->
+            <div id="header-container" class="header-container header-collapsed">
+                <header class="h-20 flex items-center justify-between px-10 border-b border-gray-50 bg-white/90 backdrop-blur-md">
+                    <div class="flex items-center gap-2 bg-[#F3F4F6] px-4 py-2 rounded-full text-sm font-bold text-[#6B7280]">
+                        <span>前端核心项目</span>
+                        <span class="text-[#D1D5DB]">/</span>
+                        <span>需求文档 (v2.0)</span>
+                        <span class="text-[#D1D5DB]">/</span>
+                        <span class="text-[#4A4E69]">系统架构.md</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        <div class="relative w-64">
+                            <input type="text" placeholder="搜索文档..." class="w-full bg-[#F3F4F6] border-2 border-transparent rounded-full px-5 py-2.5 text-sm font-bold text-[#4A4E69] focus:outline-none focus:border-[var(--accent-blue)] focus:bg-white transition-all">
+                            <div class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                <i data-lucide="search" class="w-3.5 h-3.5 text-[var(--accent-blue)]"></i>
+                            </div>
+                        </div>
+                        <!-- 导航栏固定/取消固定按钮 -->
+                        <button id="header-pin-btn" class="pin-btn w-8 h-8 rounded-full flex items-center justify-center text-[#9CA3AF] hover:text-[#4A4E69]" title="固定/取消固定顶部导航">
+                            <i data-lucide="pin" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </header>
+            </div>
+
+            <!-- 阅读区与目录区容器 -->
+            <div class="flex-1 flex overflow-hidden mt-4">
+                
+                <!-- 核心阅读区 -->
+                <div class="flex-1 overflow-y-auto p-12 pr-6">
+                    <article class="prose-soft max-w-3xl mx-auto">
+                        <h1 id="h1-sys">系统架构设计</h1>
+                        
+                        <p>欢迎阅读核心文档！本文档描述了 PRD Reader 的技术架构。它被设计为一个纯前端代理平台，旨在提供极速的跨项目文档阅读体验。</p>
+                        
+                        <h2 id="h2-process">核心流程</h2>
+                        <p>前端向代理服务发起请求。代理服务使用配置的 <code>全局 Token</code> 安全地请求 GitLab API，获取文件流并返回给前端进行优美的渲染。</p>
+                        
+                        <div class="my-12 flex justify-center">
+                            <div class="bg-[var(--sidebar-bg)] p-8 rounded-[32px] text-center relative border-4 border-white soft-shadow w-full max-w-md">
+                                <div class="absolute -top-6 -right-6 w-12 h-12 bg-[var(--accent-yellow)] rounded-full flex items-center justify-center text-white font-bold text-xl transform rotate-12 shadow-sm">✨</div>
+                                <h3 class="font-['Quicksand'] font-bold text-xl text-[#4A4E69] mb-4">数据流向</h3>
+                                <div class="flex items-center justify-center gap-3 font-bold text-[#6B7280]">
+                                    <span class="bg-white px-4 py-2 rounded-xl shadow-sm">用户</span>
+                                    <i data-lucide="arrow-right" class="w-5 h-5 text-[var(--accent-pink)]"></i>
+                                    <span class="bg-white px-4 py-2 rounded-xl shadow-sm">代理服务</span>
+                                    <i data-lucide="arrow-right" class="w-5 h-5 text-[var(--accent-pink)]"></i>
+                                    <span class="bg-white px-4 py-2 rounded-xl shadow-sm">GitLab</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h2 id="h2-stack">技术栈</h2>
+                        <p>使用以下优秀的工具构建：</p>
+                        <pre>
+React 18 + Vite
+Tailwind CSS
+marked.js
+mermaid.js
+                        </pre>
+                        
+                        <div class="h-32"></div><!-- 底部留白 -->
+                    </article>
+                </div>
+                
+                <!-- MD 文档右侧目录 (TOC) -->
+                <div class="w-64 flex-shrink-0 p-8 pt-12 overflow-y-auto border-l border-gray-50/50 bg-[#FAFAFA]/50 hidden lg:block">
+                    <div class="sticky top-0">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] mb-4 flex items-center gap-2">
+                            <i data-lucide="list" class="w-3.5 h-3.5"></i>
+                            文档目录
+                        </div>
+                        <nav class="space-y-3">
+                            <a href="#h1-sys" class="block text-sm font-bold text-[#4A4E69] hover:text-[var(--accent-blue)] transition-colors">系统架构设计</a>
+                            <a href="#h2-process" class="block text-sm font-semibold text-[#6B7280] hover:text-[var(--accent-blue)] transition-colors pl-4 relative before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-1 before:bg-[var(--accent-pink)] before:rounded-full">核心流程</a>
+                            <a href="#h2-stack" class="block text-sm font-semibold text-[#6B7280] hover:text-[var(--accent-blue)] transition-colors pl-4 relative before:content-[''] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-1 before:bg-[#D1D5DB] before:rounded-full">技术栈</a>
+                        </nav>
+                    </div>
+                </div>
+                
+            </div>
+        </main>
+    </div>
+
+    <!-- 密码验证弹窗 -->
+    <div id="auth-modal" class="fixed inset-0 z-[100] flex items-center justify-center modal-overlay hidden-view">
+        <div class="bg-white rounded-[32px] p-8 w-full max-w-sm card-shadow transform transition-all scale-100 border-4 border-[var(--bg-pastel)] relative">
+            <button onclick="hideAuthModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#9CA3AF] hover:text-[#4A4E69] hover:bg-gray-200 transition-colors">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-[var(--sidebar-bg)] rounded-[20px] flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="lock" class="w-8 h-8 text-[var(--accent-blue)]"></i>
+                </div>
+                <h3 class="font-['Quicksand'] text-2xl font-bold text-[#4A4E69]">管理员验证</h3>
+                <p class="text-sm text-[#9CA3AF] font-semibold mt-1">请输入访问密码进入配置中心</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="relative">
+                    <i data-lucide="key" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#9CA3AF]"></i>
+                    <input type="password" id="admin-pwd" placeholder="输入密码" class="w-full bg-[#F9FAFB] border-2 border-transparent rounded-2xl py-3 pl-12 pr-4 font-bold text-[#4A4E69] focus:outline-none focus:border-[var(--accent-blue)] focus:bg-white transition-all">
+                </div>
+                <!-- 错误提示占位 -->
+                <p id="pwd-error" class="text-xs text-red-500 font-bold hidden-view px-2">密码错误，请重试。(初始密码为: Aa@000000)</p>
+                
+                <button onclick="verifyPassword()" class="w-full bg-[var(--accent-blue)] text-white font-bold py-3 rounded-2xl hover:shadow-[0_8px_20px_rgba(162,210,255,0.4)] hover:-translate-y-1 transition-all">
+                    确认进入
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化 Lucide 图标
+        lucide.createIcons();
+
+        // 侧边栏交互逻辑
+        const sidebarContainer = document.getElementById('sidebar-container');
+        const sidebarTrigger = document.getElementById('sidebar-trigger');
+        const mainContent = document.getElementById('main-content');
+        const pinBtn = document.getElementById('pin-btn');
+        
+        let isPinned = false;
+
+        sidebarTrigger.addEventListener('mouseenter', () => {
+            if (!isPinned) {
+                sidebarContainer.classList.remove('sidebar-collapsed');
+                sidebarContainer.classList.add('sidebar-expanded');
+            }
+        });
+
+        sidebarContainer.addEventListener('mouseleave', () => {
+            if (!isPinned) {
+                sidebarContainer.classList.remove('sidebar-expanded');
+                sidebarContainer.classList.add('sidebar-collapsed');
+            }
+        });
+
+        pinBtn.addEventListener('click', () => {
+            isPinned = !isPinned;
+            if (isPinned) {
+                pinBtn.classList.add('pin-active');
+                mainContent.classList.remove('main-pl-collapsed');
+                mainContent.classList.add('main-pl-expanded');
+                sidebarTrigger.style.display = 'none';
+            } else {
+                pinBtn.classList.remove('pin-active');
+                mainContent.classList.remove('main-pl-expanded');
+                mainContent.classList.add('main-pl-collapsed');
+                sidebarTrigger.style.display = 'block';
+            }
+        });
+
+        // 顶部导航栏交互逻辑
+        const headerContainer = document.getElementById('header-container');
+        const headerTrigger = document.getElementById('header-trigger');
+        const headerPinBtn = document.getElementById('header-pin-btn');
+        
+        let isHeaderPinned = false;
+
+        headerTrigger.addEventListener('mouseenter', () => {
+            if (!isHeaderPinned) {
+                headerContainer.classList.remove('header-collapsed');
+                headerContainer.classList.add('header-expanded');
+            }
+        });
+
+        headerContainer.addEventListener('mouseleave', () => {
+            if (!isHeaderPinned) {
+                headerContainer.classList.remove('header-expanded');
+                headerContainer.classList.add('header-collapsed');
+            }
+        });
+
+        headerPinBtn.addEventListener('click', () => {
+            isHeaderPinned = !isHeaderPinned;
+            if (isHeaderPinned) {
+                headerPinBtn.classList.add('pin-active');
+                headerTrigger.style.display = 'none';
+            } else {
+                headerPinBtn.classList.remove('pin-active');
+                headerTrigger.style.display = 'block';
+            }
+        });
+
+        // 复制 GitLab 地址功能
+        function copyGitlabUrl(url, event) {
+            event.stopPropagation();
+            navigator.clipboard.writeText(url).then(() => {
+                // 简单的复制成功反馈
+                const btn = event.currentTarget;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 text-green-500"></i>';
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    lucide.createIcons();
+                }, 2000);
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+
+        // 树节点展开/收起交互
+        function toggleNode(nodeId, element) {
+            const targetNode = document.getElementById(nodeId);
+            if (!targetNode) return;
+            const icon = element.querySelector('[data-lucide^="chevron"]');
+            
+            if (targetNode.classList.contains('hidden')) {
+                targetNode.classList.remove('hidden');
+                icon.setAttribute('data-lucide', 'chevron-down');
+            } else {
+                targetNode.classList.add('hidden');
+                icon.setAttribute('data-lucide', 'chevron-right');
+            }
+            lucide.createIcons();
+        }
+
+        // 下钻目录交互逻辑
+        let dirStack = [];
+        
+        function enterDirectory(nodeId, dirName) {
+            dirStack.push({ id: nodeId, name: dirName });
+            renderTree();
+        }
+
+        function exitDirectory() {
+            if (dirStack.length > 0) {
+                dirStack.pop();
+                renderTree();
+            }
+        }
+
+        function renderTree() {
+            const allNodes = document.querySelectorAll('.tree-node');
+            const backBtn = document.getElementById('back-to-parent');
+            
+            if (dirStack.length === 0) {
+                allNodes.forEach(n => {
+                    n.style.display = '';
+                    n.classList.remove('focused-root');
+                });
+                backBtn.classList.add('hidden');
+            } else {
+                const currentFocus = dirStack[dirStack.length - 1];
+                const focusNode = document.getElementById(currentFocus.id);
+                
+                allNodes.forEach(n => {
+                    if (focusNode.contains(n)) {
+                        n.style.display = '';
+                    } else {
+                        n.style.display = 'none';
+                    }
+                });
+                
+                allNodes.forEach(n => n.classList.remove('focused-root'));
+                focusNode.classList.add('focused-root');
+                
+                backBtn.classList.remove('hidden');
+            }
+        }
+
+        // 管理员密码弹窗交互
+        const authModal = document.getElementById('auth-modal');
+        const pwdInput = document.getElementById('admin-pwd');
+        const pwdError = document.getElementById('pwd-error');
+
+        function showAuthModal() {
+            authModal.classList.remove('hidden-view');
+            pwdInput.value = '';
+            pwdError.classList.add('hidden-view');
+            setTimeout(() => pwdInput.focus(), 100);
+        }
+
+        function hideAuthModal() {
+            authModal.classList.add('hidden-view');
+        }
+
+        function verifyPassword() {
+            if (pwdInput.value === 'Aa@000000') {
+                window.location.href = 'admin.html';
+            } else {
+                pwdError.classList.remove('hidden-view');
+                pwdInput.classList.add('border-red-300');
+                // 震动效果
+                authModal.querySelector('.bg-white').classList.add('animate-pulse');
+                setTimeout(() => authModal.querySelector('.bg-white').classList.remove('animate-pulse'), 500);
+            }
+        }
+
+        // 回车确认密码
+        pwdInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                verifyPassword();
+            }
+            // 重新输入时清除错误状态
+            pwdError.classList.add('hidden-view');
+            pwdInput.classList.remove('border-red-300');
+        });
+    </script>
+</body>
+</html>

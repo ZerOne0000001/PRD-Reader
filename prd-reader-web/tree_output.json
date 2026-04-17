@@ -1,0 +1,366 @@
+{
+  "success": true,
+  "data": [
+    {
+      "id": "1205187246",
+      "name": "majiangjifen",
+      "path": "ZerOne0000001/majiangjifen",
+      "default_branch": "main",
+      "status": "正常",
+      "tree": [
+        {
+          "path": ".gitignore",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "4f3a375c7538e1d103fec1dc8b0d2934ebfad50a",
+          "size": 89,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/4f3a375c7538e1d103fec1dc8b0d2934ebfad50a",
+          "id": "4f3a375c7538e1d103fec1dc8b0d2934ebfad50a",
+          "name": ".gitignore"
+        },
+        {
+          "path": "2604_1",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "812d60d659294cd72e8e90b937bce22a2908c767",
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/trees/812d60d659294cd72e8e90b937bce22a2908c767",
+          "id": "812d60d659294cd72e8e90b937bce22a2908c767",
+          "name": "2604_1"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "de0349b804e61971a9809b8a0ea98b7803619792",
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/trees/de0349b804e61971a9809b8a0ea98b7803619792",
+          "id": "de0349b804e61971a9809b8a0ea98b7803619792",
+          "name": "F1_MahjongScoring"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Background",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "619c2412cdb3d09826f19ce6c49f1f05f7947e09",
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/trees/619c2412cdb3d09826f19ce6c49f1f05f7947e09",
+          "id": "619c2412cdb3d09826f19ce6c49f1f05f7947e09",
+          "name": "Background"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Background/Requirement_Background.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "b89c13cdb9b6d96656afa9386701864e33abec64",
+          "size": 3142,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/b89c13cdb9b6d96656afa9386701864e33abec64",
+          "id": "b89c13cdb9b6d96656afa9386701864e33abec64",
+          "name": "Requirement_Background.md"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Background/System_Survey.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "ec2de265c7384eba139c0386edb52957c023ac2b",
+          "size": 2661,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/ec2de265c7384eba139c0386edb52957c023ac2b",
+          "id": "ec2de265c7384eba139c0386edb52957c023ac2b",
+          "name": "System_Survey.md"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Background/User_Stories.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "f5ea6080fcac14532b8aaba3889129c7d7eb455d",
+          "size": 2620,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/f5ea6080fcac14532b8aaba3889129c7d7eb455d",
+          "id": "f5ea6080fcac14532b8aaba3889129c7d7eb455d",
+          "name": "User_Stories.md"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Design",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "ac778ffc5c4747cd51f9d48d6d8a2629bbca6dec",
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/trees/ac778ffc5c4747cd51f9d48d6d8a2629bbca6dec",
+          "id": "ac778ffc5c4747cd51f9d48d6d8a2629bbca6dec",
+          "name": "Design"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Design/Concept_Design.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "1b8ecc44ca8ee663de4b7102aee12c764094a825",
+          "size": 4007,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/1b8ecc44ca8ee663de4b7102aee12c764094a825",
+          "id": "1b8ecc44ca8ee663de4b7102aee12c764094a825",
+          "name": "Concept_Design.md"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Design/Design_Trend_Guide.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "ae8b1faaf9b7c7a2ec6b94716e1d07497521f041",
+          "size": 3757,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/ae8b1faaf9b7c7a2ec6b94716e1d07497521f041",
+          "id": "ae8b1faaf9b7c7a2ec6b94716e1d07497521f041",
+          "name": "Design_Trend_Guide.md"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Design/Page_Structure.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "142633232f6fdb9dc33a10040a3be47f5141e2f9",
+          "size": 4722,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/142633232f6fdb9dc33a10040a3be47f5141e2f9",
+          "id": "142633232f6fdb9dc33a10040a3be47f5141e2f9",
+          "name": "Page_Structure.md"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Feature",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "ff8660cff9d6cc2b6a182dd6bee7f0a7805f21c7",
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/trees/ff8660cff9d6cc2b6a182dd6bee7f0a7805f21c7",
+          "id": "ff8660cff9d6cc2b6a182dd6bee7f0a7805f21c7",
+          "name": "Feature"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Feature/Feature_List.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "17e814aaaf1516a92f86a77831651b70abd8847f",
+          "size": 2672,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/17e814aaaf1516a92f86a77831651b70abd8847f",
+          "id": "17e814aaaf1516a92f86a77831651b70abd8847f",
+          "name": "Feature_List.md"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Flow",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "aa3ca54b7d4bcbacd2cbe17d9598d7573e3cf441",
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/trees/aa3ca54b7d4bcbacd2cbe17d9598d7573e3cf441",
+          "id": "aa3ca54b7d4bcbacd2cbe17d9598d7573e3cf441",
+          "name": "Flow"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Flow/Business_Flow.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "46d037194e17d2fbceca20038ce8a9e44da7c866",
+          "size": 2704,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/46d037194e17d2fbceca20038ce8a9e44da7c866",
+          "id": "46d037194e17d2fbceca20038ce8a9e44da7c866",
+          "name": "Business_Flow.md"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Flow/User_Journey_Map.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "ea097b52094ea35e71e7f8abd93faa2b96e44bda",
+          "size": 2358,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/ea097b52094ea35e71e7f8abd93faa2b96e44bda",
+          "id": "ea097b52094ea35e71e7f8abd93faa2b96e44bda",
+          "name": "User_Journey_Map.md"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Interactive_PRD.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "dc97f91f234de0ecf554048c33ec47b8f3672ea6",
+          "size": 39445,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/dc97f91f234de0ecf554048c33ec47b8f3672ea6",
+          "id": "dc97f91f234de0ecf554048c33ec47b8f3672ea6",
+          "name": "Interactive_PRD.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/PRD_MahjongScoring_2604_1.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "4e61a6a491bb8f12327af7fbb9f36f611e53142a",
+          "size": 19267,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/4e61a6a491bb8f12327af7fbb9f36f611e53142a",
+          "id": "4e61a6a491bb8f12327af7fbb9f36f611e53142a",
+          "name": "PRD_MahjongScoring_2604_1.md"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "a3689dec034db3bcc89005c3e42eccb98c41667f",
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/trees/a3689dec034db3bcc89005c3e42eccb98c41667f",
+          "id": "a3689dec034db3bcc89005c3e42eccb98c41667f",
+          "name": "Prototypes"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/examples",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "d94fc3efa6050b95879898b4ea9dbe6e77e7b38c",
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/trees/d94fc3efa6050b95879898b4ea9dbe6e77e7b38c",
+          "id": "d94fc3efa6050b95879898b4ea9dbe6e77e7b38c",
+          "name": "examples"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/examples/style10_cyberpunk_neon.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "0738d2980b2df9384a900b18ea25d34aa4f146ff",
+          "size": 16864,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/0738d2980b2df9384a900b18ea25d34aa4f146ff",
+          "id": "0738d2980b2df9384a900b18ea25d34aa4f146ff",
+          "name": "style10_cyberpunk_neon.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/examples/style1_3d_material.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "5c235001519767f48decc15853c8664eb400429a",
+          "size": 16047,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/5c235001519767f48decc15853c8664eb400429a",
+          "id": "5c235001519767f48decc15853c8664eb400429a",
+          "name": "style1_3d_material.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/examples/style2_tech_wear.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "78dab4f3d9d1061d701faba9e1e521a833cdb4f6",
+          "size": 13958,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/78dab4f3d9d1061d701faba9e1e521a833cdb4f6",
+          "id": "78dab4f3d9d1061d701faba9e1e521a833cdb4f6",
+          "name": "style2_tech_wear.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/examples/style3_doodle_journal.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "f61957f2530e790d5d8d5a9c11ba7704ea3010e8",
+          "size": 14849,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/f61957f2530e790d5d8d5a9c11ba7704ea3010e8",
+          "id": "f61957f2530e790d5d8d5a9c11ba7704ea3010e8",
+          "name": "style3_doodle_journal.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/examples/style4_aurora_glass.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "ced5181cb3400a615079c23519c0123cfb60f2b9",
+          "size": 17046,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/ced5181cb3400a615079c23519c0123cfb60f2b9",
+          "id": "ced5181cb3400a615079c23519c0123cfb60f2b9",
+          "name": "style4_aurora_glass.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/examples/style5_retro_lcd.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "3f1fed6cb7911f859d41b8e9042d3b94d9e1fc16",
+          "size": 14175,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/3f1fed6cb7911f859d41b8e9042d3b94d9e1fc16",
+          "id": "3f1fed6cb7911f859d41b8e9042d3b94d9e1fc16",
+          "name": "style5_retro_lcd.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/examples/style6_dopamine_candy.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "9702d6d7077e9666949f82a5850db96b4f0b2ae3",
+          "size": 15719,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/9702d6d7077e9666949f82a5850db96b4f0b2ae3",
+          "id": "9702d6d7077e9666949f82a5850db96b4f0b2ae3",
+          "name": "style6_dopamine_candy.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/examples/style7_swiss_typography.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "cb98a2ae9a17e2027eae66afd041865bc81e9dc0",
+          "size": 13708,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/cb98a2ae9a17e2027eae66afd041865bc81e9dc0",
+          "id": "cb98a2ae9a17e2027eae66afd041865bc81e9dc0",
+          "name": "style7_swiss_typography.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/examples/style9_nordic_minimal.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "c9921ea98ace0ddd570e70b91fccf888d8532103",
+          "size": 12194,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/c9921ea98ace0ddd570e70b91fccf888d8532103",
+          "id": "c9921ea98ace0ddd570e70b91fccf888d8532103",
+          "name": "style9_nordic_minimal.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/game.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "4bc83c9773142d7828f9a5025f39683768a1054d",
+          "size": 26360,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/4bc83c9773142d7828f9a5025f39683768a1054d",
+          "id": "4bc83c9773142d7828f9a5025f39683768a1054d",
+          "name": "game.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/index.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "c7761094ffc461faea331a2050c1c17a56fcebe3",
+          "size": 10703,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/c7761094ffc461faea331a2050c1c17a56fcebe3",
+          "id": "c7761094ffc461faea331a2050c1c17a56fcebe3",
+          "name": "index.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/result.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "9d2627104db2a52d875254ccfe6bf865b8684f37",
+          "size": 13013,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/9d2627104db2a52d875254ccfe6bf865b8684f37",
+          "id": "9d2627104db2a52d875254ccfe6bf865b8684f37",
+          "name": "result.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Prototypes/room.html",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "a20630e9dcf4557a041b7f62b06821e2b952cdef",
+          "size": 9821,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/a20630e9dcf4557a041b7f62b06821e2b952cdef",
+          "id": "a20630e9dcf4557a041b7f62b06821e2b952cdef",
+          "name": "room.html"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/README.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "a744499957c734ec7a875680f6452f7ecdc301a1",
+          "size": 17,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/a744499957c734ec7a875680f6452f7ecdc301a1",
+          "id": "a744499957c734ec7a875680f6452f7ecdc301a1",
+          "name": "README.md"
+        },
+        {
+          "path": "2604_1/F1_MahjongScoring/Requirement_List.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "aada868e53840d69c3c144fd9113a5e8f20a59e0",
+          "size": 311,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/aada868e53840d69c3c144fd9113a5e8f20a59e0",
+          "id": "aada868e53840d69c3c144fd9113a5e8f20a59e0",
+          "name": "Requirement_List.md"
+        },
+        {
+          "path": "ITERATION_LOG.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "62cf8432496772c7c02bd97d0cfe2ab5a8a3a39e",
+          "size": 263,
+          "url": "https://api.github.com/repos/ZerOne0000001/majiangjifen/git/blobs/62cf8432496772c7c02bd97d0cfe2ab5a8a3a39e",
+          "id": "62cf8432496772c7c02bd97d0cfe2ab5a8a3a39e",
+          "name": "ITERATION_LOG.md"
+        }
+      ]
+    }
+  ]
+}

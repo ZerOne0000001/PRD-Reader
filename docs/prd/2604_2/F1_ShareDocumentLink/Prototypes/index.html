@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRD-Reader - 分享文档链接原型 (修正版)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入系统正在使用的字体 -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    /* 与系统完全一致的 CSS 变量与基础样式 */
+    :root {
+      --bg-pastel: #FDF4F5;
+      --sidebar-bg: #E8F3F1;
+      --accent-pink: #FFB5C2;
+      --accent-blue: #A2D2FF;
+      --accent-yellow: #FDE293;
+      --text-dark: #4A4E69;
+      --text-light: #9CA3AF;
+    }
+    
+    body {
+      font-family: 'Nunito', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-pastel);
+      color: var(--text-dark);
+      overflow: hidden;
+    }
+
+    ::-webkit-scrollbar { display: none; width: 0; background: transparent; }
+    * { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .card-shadow { box-shadow: 0 4px 15px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.05); }
+
+    /* --- 左侧树样式适配系统 --- */
+    .tree-node {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      position: relative;
+      transition: background-color 0.2s ease;
+      color: var(--text-dark);
+      font-weight: 700;
+    }
+
+    .tree-node:hover {
+      background-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .tree-node.active {
+      background-color: #FFFFFF;
+      color: var(--accent-blue);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .icon-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    /* 悬浮操作区 */
+    .action-group {
+      opacity: 0;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+      transition: opacity 0.2s ease;
+    }
+
+    .tree-node:hover .action-group,
+    .tree-node.popover-open .action-group {
+      opacity: 1;
+    }
+
+    .action-btn {
+      padding: 6px;
+      border-radius: 8px;
+      color: var(--text-light);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover,
+    .action-btn.active {
+      background-color: #FFFFFF;
+      color: var(--accent-blue);
+    }
+
+    /* 核心交互：Popover 气泡菜单 (适配系统风格) */
+    .popover {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 4px;
+      background: #FFFFFF;
+      border: 4px solid var(--bg-pastel);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px -5px rgba(162, 210, 255, 0.3);
+      padding: 6px;
+      z-index: 60;
+      min-width: 180px;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .popover.show {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .popover-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-dark);
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s;
+    }
+
+    .popover-item:hover {
+      background-color: var(--bg-pastel);
+      color: var(--accent-blue);
+    }
+
+    /* --- 404 缺省页样式适配系统 --- */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 3rem;
+      background: #FFFFFF;
+      border-radius: 24px;
+      border: 4px solid var(--bg-pastel);
+      margin: 1.5rem;
+    }
+    
+    .empty-state-title {
+      font-family: 'Quicksand', sans-serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 1rem;
+    }
+
+    /* Toast 提示 (系统风格) */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100%);
+      background-color: var(--text-dark);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 10px 25px -5px rgba(74, 78, 105, 0.4);
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 100;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="flex h-screen w-screen overflow-hidden relative">
+
+  <!-- 1. 左侧抽屉树容器 (系统布局) -->
+  <div class="absolute left-0 top-0 bottom-0 z-50 p-3 w-[340px] translate-x-0">
+    <aside class="w-full bg-[var(--sidebar-bg)] rounded-[32px] flex flex-col h-full card-shadow overflow-hidden border-4 border-white relative">
+      
+      <!-- 头部标识 -->
+      <div class="h-24 flex items-center justify-between px-6 pt-4 shrink-0 border-b border-white/50">
+        <div class="bg-white px-4 py-2 rounded-full shadow-sm flex items-center gap-2">
+          <div class="w-2.5 h-2.5 rounded-full bg-[var(--accent-pink)]"></div>
+          <div class="w-2.5 h-2.5 rounded-full bg-[var(--accent-yellow)]"></div>
+          <div class="w-2.5 h-2.5 rounded-full bg-[var(--accent-blue)]"></div>
+          <span class="font-bold text-[#4A4E69] ml-1 tracking-wide font-['Quicksand'] text-base">PRD Reader</span>
+        </div>
+      </div>
+
+      <!-- 下钻模式下的返回按钮 (默认隐藏) -->
+      <div id="drill-down-header" class="hidden px-4 pt-4">
+        <div class="flex items-center gap-2 px-2 py-2 text-[var(--accent-blue)] font-bold cursor-pointer hover:bg-white/50 rounded-xl transition-colors" onclick="resetTree()">
+          <div class="w-7 h-7 rounded-lg bg-white flex items-center justify-center shadow-sm">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </div>
+          <span>返回上级</span>
+        </div>
+        <div class="px-2 pt-2 text-xs font-bold text-gray-400 uppercase tracking-wider" id="sidebar-title">当前路径</div>
+      </div>
+
+      <!-- Tree Content -->
+      <div class="flex-1 overflow-y-auto p-4 pt-4" id="tree-container">
+        
+        <!-- 仓库节点 -->
+        <div class="mb-4">
+          <div class="flex items-center justify-between group px-2 py-2 hover:bg-white/50 rounded-xl transition-colors cursor-pointer" onclick="toggleExpand('repo1', this)">
+            <div class="flex items-center gap-2 text-[#4A4E69] font-bold flex-1">
+              <i data-lucide="cloud" class="w-4 h-4 text-[var(--accent-blue)]"></i>
+              PRD-Reader
+            </div>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-[#9CA3AF] chevron-icon transition-transform"></i>
+          </div>
+          
+          <div id="repo1" class="mt-1">
+            <!-- 文件夹节点 -->
+            <div class="mt-1 pl-4">
+              <div class="tree-node popover-parent" onclick="toggleExpand('folder1', this)">
+                <div class="flex items-center gap-2 text-[#6B7280] font-semibold flex-1 min-w-0">
+                  <i data-lucide="chevron-down" class="w-4 h-4 shrink-0 text-[#9CA3AF] chevron-icon transition-transform"></i>
+                  <i data-lucide="folder" class="w-4 h-4 shrink-0 text-[var(--accent-yellow)]"></i>
+                  <span class="truncate">docs</span>
+                </div>
+                
+                <!-- Popover 交互区 -->
+                <div class="action-group">
+                  <button class="action-btn" onclick="openPopover(event, 'popover-docs', this)" title="分享">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                  </button>
+                  <button class="action-btn" onclick="drillDown(event, 'docs', '文件夹')" title="进入此目录">
+                    <i data-lucide="arrow-right-to-line" class="w-4 h-4"></i>
+                  </button>
+                  
+                  <div id="popover-docs" class="popover">
+                      <div class="popover-item" onclick="copyLink(event, 'Git 地址', 'https://github.com/PRD-Reader/docs')">
+                        <i data-lucide="github" class="w-4 h-4 text-[#9CA3AF]"></i> 复制 Git 地址
+                      </div>
+                      <div class="popover-item" onclick="copyLink(event, '系统分享链接', '?repo=PRD-Reader&file=docs')">
+                        <i data-lucide="link" class="w-4 h-4 text-[var(--accent-blue)]"></i> 复制系统链接
+                      </div>
+                    </div>
+                </div>
+              </div>
+              
+              <!-- 文件节点 -->
+              <div id="folder1">
+                <div class="pl-8 mt-1">
+                  <div class="tree-node popover-parent" onclick="selectFile('readme.md', this)">
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                      <div class="w-7 h-7 shrink-0 rounded-lg flex items-center justify-center bg-white">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5 text-[#9CA3AF]"></i>
+                      </div>
+                      <span class="text-sm truncate">readme.md</span>
+                    </div>
+                    
+                    <div class="action-group">
+                      <button class="action-btn" onclick="openPopover(event, 'popover-readme', this)" title="分享">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                      </button>
+                      <div id="popover-readme" class="popover">
+                          <div class="popover-item" onclick="copyLink(event, 'Git 地址', 'https://github.com/PRD-Reader/docs/readme.md')">
+                            <i data-lucide="github" class="w-4 h-4 text-[#9CA3AF]"></i> 复制 Git 地址
+                          </div>
+                          <div class="popover-item" onclick="copyLink(event, '系统分享链接', '?repo=PRD-Reader&file=docs/readme.md')">
+                            <i data-lucide="link" class="w-4 h-4 text-[var(--accent-blue)]"></i> 复制系统链接
+                          </div>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </div>
+
+  <!-- 2. 右侧主阅读区 (系统布局) -->
+  <div class="flex-1 h-full p-3 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] flex relative pl-[340px]">
+    <main class="flex-1 flex flex-col relative bg-white rounded-[32px] card-shadow overflow-hidden border-4 border-[var(--bg-pastel)]">
+      
+      <!-- 顶部 Header -->
+      <header class="h-20 flex items-center justify-between px-10 border-b border-gray-50 bg-white/90 backdrop-blur-md shrink-0">
+        <div class="flex items-center gap-2 bg-[#F3F4F6] px-4 py-2 rounded-full text-sm font-bold text-[#6B7280]">
+          <span class="text-[#4A4E69]" id="breadcrumb-file">docs/readme.md</span>
+        </div>
+        
+        <!-- 模拟状态栏控制按钮 (使用系统圆角按钮风格) -->
+        <div class="ml-auto flex gap-3">
+          <button class="px-4 py-2 text-xs font-bold text-[#4A4E69] bg-white border-2 border-[#E5E7EB] rounded-2xl hover:border-[#D1D5DB] transition-all" onclick="simulate404('repo')">模拟无权限</button>
+          <button class="px-4 py-2 text-xs font-bold text-[#4A4E69] bg-white border-2 border-[#E5E7EB] rounded-2xl hover:border-[#D1D5DB] transition-all" onclick="simulate404('file')">模拟文件丢失</button>
+          <button class="px-4 py-2 text-xs font-bold text-white bg-[var(--accent-blue)] rounded-2xl hover:-translate-y-0.5 hover:shadow-[0_6px_15px_rgba(162,210,255,0.4)] transition-all" onclick="resetView()">恢复渲染</button>
+        </div>
+      </header>
+
+      <!-- 正常渲染内容区 -->
+      <div id="view-normal" class="flex-1 overflow-y-auto p-12 pr-6">
+        <article class="max-w-3xl mx-auto pb-32 w-full">
+          <!-- 使用系统 prose-soft 风格的标题 -->
+          <h1 class="font-['Quicksand'] text-[2.5rem] font-bold text-[#4A4E69] mb-8 inline-block relative z-10">
+            PRD-Reader 简介
+            <div class="absolute bottom-1 left-[-10px] right-[-10px] h-3 bg-[var(--accent-yellow)] z-[-1] rounded-full opacity-70"></div>
+          </h1>
+          
+          <h2 class="font-['Quicksand'] text-[1.75rem] font-bold text-[#4A4E69] mt-8 mb-6 flex items-center gap-2">
+            <span class="text-[1.2rem] text-[var(--accent-pink)]">✿</span> 交互说明
+          </h2>
+          
+          <p class="text-[1.1rem] leading-[1.7] mb-6 text-[#5D607B]">
+            这是一个高度定制化的阅读器，本次原型重点展示分享功能：
+          </p>
+          <ul class="pl-6 mb-6 text-[#5D607B] list-disc space-y-2">
+            <li>鼠标悬停在左侧 <code>docs</code> 或 <code>readme.md</code> 上，点击出现的 <i data-lucide="copy" class="w-4 h-4 inline text-[var(--accent-blue)]"></i> 图标。</li>
+            <li>体验圆润风格的 <strong>Popover</strong> 气泡菜单。</li>
+            <li>点击菜单项，体验弹性的 <strong>Toast</strong> 反馈。</li>
+            <li>点击右上角的按钮，体验与系统高度融合的 <strong>404 缺省状态页</strong>。</li>
+          </ul>
+        </article>
+      </div>
+
+      <!-- 缺省状态：仓库无权限 -->
+      <div id="view-404-repo" class="empty-state hidden">
+        <div class="w-24 h-24 mb-6 rounded-[24px] bg-[#FDF4F5] flex items-center justify-center">
+          <i data-lucide="lock" class="w-12 h-12 text-[var(--accent-pink)]"></i>
+        </div>
+        <h2 class="empty-state-title">仓库无权限或未配置</h2>
+        <p class="text-[#9CA3AF] font-semibold max-w-md mb-8 text-lg">您访问的分享链接指向了一个未被系统授权的仓库。请联系管理员添加白名单。</p>
+        <button class="px-6 py-3 bg-[var(--accent-blue)] text-white font-bold rounded-2xl hover:shadow-[0_8px_20px_rgba(162,210,255,0.4)] hover:-translate-y-1 transition-all" onclick="resetView()">
+          返回全局视图
+        </button>
+      </div>
+
+      <!-- 缺省状态：文件不存在 -->
+      <div id="view-404-file" class="empty-state hidden">
+        <div class="w-24 h-24 mb-6 rounded-[24px] bg-[#F3F4F6] flex items-center justify-center">
+          <i data-lucide="file-question" class="w-12 h-12 text-[#9CA3AF]"></i>
+        </div>
+        <h2 class="empty-state-title">文件不存在或已被删除</h2>
+        <p class="text-[#9CA3AF] font-semibold max-w-md mb-8 text-lg">您访问的文档路径在此仓库中无法找到。它可能已被重命名、移动或删除。</p>
+        <button class="px-6 py-3 bg-[var(--accent-blue)] text-white font-bold rounded-2xl hover:shadow-[0_8px_20px_rgba(162,210,255,0.4)] hover:-translate-y-1 transition-all" onclick="resetView()">
+          浏览该仓库其他文件
+        </button>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- 全局 Toast -->
+  <div id="toast" class="toast">
+    <div class="w-6 h-6 rounded-full bg-[var(--accent-yellow)] flex items-center justify-center">
+      <i data-lucide="check" class="w-4 h-4 text-white"></i>
+    </div>
+    <span id="toast-msg">已复制到剪贴板</span>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let currentPopover = null;
+    let currentActiveBtn = null;
+
+    function toggleExpand(id, element) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.toggle('hidden');
+        const chevron = element.querySelector('.chevron-icon');
+        if (chevron) {
+          chevron.style.transform = el.classList.contains('hidden') ? 'rotate(-90deg)' : 'rotate(0deg)';
+        }
+      }
+    }
+
+    function selectFile(filename, element) {
+      document.querySelectorAll('.tree-node').forEach(el => el.classList.remove('active'));
+      element.classList.add('active');
+      document.getElementById('breadcrumb-file').innerText = `docs/${filename}`;
+    }
+
+    function drillDown(event, folderName, type) {
+      event.stopPropagation();
+      document.getElementById('drill-down-header').classList.remove('hidden');
+      document.getElementById('sidebar-title').innerText = `/${folderName}`;
+      showToast(`已下钻进入 ${type}`);
+    }
+
+    function resetTree() {
+      document.getElementById('drill-down-header').classList.add('hidden');
+    }
+
+    function openPopover(event, popoverId, btnElement) {
+      event.stopPropagation();
+      const popover = document.getElementById(popoverId);
+      const parentNode = btnElement.closest('.popover-parent');
+      
+      if (currentPopover === popover) {
+        closeAllPopovers();
+        return;
+      }
+      
+      closeAllPopovers();
+      popover.classList.add('show');
+      parentNode.classList.add('popover-open');
+      btnElement.classList.add('active');
+      
+      currentPopover = popover;
+      currentActiveBtn = btnElement;
+    }
+
+    function closeAllPopovers() {
+      if (currentPopover) {
+        currentPopover.classList.remove('show');
+        currentPopover = null;
+      }
+      if (currentActiveBtn) {
+        currentActiveBtn.classList.remove('active');
+        currentActiveBtn.closest('.popover-parent').classList.remove('popover-open');
+        currentActiveBtn = null;
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (currentPopover && !e.target.closest('.popover') && !e.target.closest('.action-btn')) {
+        closeAllPopovers();
+      }
+    });
+
+    function copyLink(event, type, pathOrQuery) {
+      event.stopPropagation();
+      closeAllPopovers();
+      
+      let finalUrl = pathOrQuery;
+      if (type === '系统分享链接') {
+        // 拼装完整的系统 URL
+        const baseUrl = window.location.origin + window.location.pathname;
+        finalUrl = baseUrl + pathOrQuery;
+      }
+      
+      // 使用真实的剪贴板 API 复制
+      navigator.clipboard.writeText(finalUrl).then(() => {
+        showToast(`已复制 ${type}`);
+      }).catch(err => {
+        console.error('复制失败', err);
+        showToast(`复制失败，请手动复制`);
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      
+      toast.classList.remove('show');
+      void toast.offsetWidth;
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function simulate404(type) {
+      document.getElementById('view-normal').classList.add('hidden');
+      document.getElementById('view-404-repo').classList.add('hidden');
+      document.getElementById('view-404-file').classList.add('hidden');
+      
+      if (type === 'repo') {
+        document.getElementById('view-404-repo').classList.remove('hidden');
+      } else if (type === 'file') {
+        document.getElementById('view-404-file').classList.remove('hidden');
+      }
+    }
+
+    function resetView() {
+      document.getElementById('view-normal').classList.remove('hidden');
+      document.getElementById('view-404-repo').classList.add('hidden');
+      document.getElementById('view-404-file').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>

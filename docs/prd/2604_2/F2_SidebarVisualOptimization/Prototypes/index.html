@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRD-Reader - Sidebar Pastel Style</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- 引入系统要求的字体 -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    /* 核心视觉定义：来自 Blueprint 的 Soft & Pastel 风格 */
+    :root {
+      --bg-pastel: #FDF4F5;
+      --sidebar-bg: #E8F3F1;
+      --accent-blue: #A2D2FF;
+      --accent-pink: #FFB5C2;
+      --accent-yellow: #FDE293;
+      --text-dark: #4A4E69;
+      --text-light: #9CA3AF;
+      
+      --hover-bg: rgba(255, 255, 255, 0.6);
+      --active-bg: #FFFFFF;
+      --soft-shadow: 0 8px 24px rgba(162, 210, 255, 0.4);
+      --tooltip-shadow: 0 10px 30px rgba(74, 78, 105, 0.15);
+      
+      --sidebar-width: 280px;
+      --min-sidebar-width: 220px;
+      --max-sidebar-width: 500px;
+    }
+
+    body {
+      background-color: var(--bg-pastel);
+      color: var(--text-dark);
+      font-family: 'Nunito', sans-serif;
+      margin: 0;
+      overflow: hidden;
+      display: flex;
+      height: 100vh;
+      padding: 16px; /* 外围留白，营造悬浮感 */
+    }
+
+    /* === 侧边栏与布局 === */
+    .sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--min-sidebar-width);
+      max-width: var(--max-sidebar-width);
+      background-color: var(--sidebar-bg);
+      border-radius: 32px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(162, 210, 255, 0.15);
+      margin-right: 16px; /* 与主区域的间距 */
+    }
+
+    .main-content {
+      flex: 1;
+      height: 100%;
+      overflow-y: auto;
+      padding: 40px 60px;
+      background-color: #FFFFFF;
+      border-radius: 32px;
+      box-shadow: var(--soft-shadow);
+    }
+
+    /* === Soft Resizer 柔和拖拽条 === */
+    .resizer {
+      position: absolute;
+      right: -8px; /* 放在间距中间 */
+      top: 32px;
+      bottom: 32px;
+      width: 16px;
+      cursor: col-resize;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .resizer::after {
+      content: '';
+      width: 4px;
+      height: 100%;
+      background-color: transparent;
+      border-radius: 99px;
+      transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease;
+    }
+
+    .resizer:hover::after, .resizer.dragging::after {
+      background-color: var(--accent-blue);
+      opacity: 0.5;
+      transform: scaleX(1.5);
+    }
+
+    /* === 目录树样式 === */
+    .tree-header {
+      padding: 28px 24px 16px 24px;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .tree-header::before {
+      content: '✿';
+      color: var(--accent-pink);
+    }
+
+    .tree-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 24px 16px;
+    }
+
+    /* 自定义滚动条 */
+    .tree-container::-webkit-scrollbar { width: 6px; }
+    .tree-container::-webkit-scrollbar-thumb { background-color: rgba(74, 78, 105, 0.1); border-radius: 10px; }
+    .tree-container::-webkit-scrollbar-thumb:hover { background-color: rgba(74, 78, 105, 0.2); }
+
+    .tree-node {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      margin: 4px 0;
+      border-radius: 12px; /* 圆润的节点 */
+      cursor: pointer;
+      color: var(--text-dark);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: 14px;
+      font-weight: 600;
+      user-select: none;
+    }
+
+    .tree-node:hover {
+      background-color: var(--hover-bg);
+      transform: translateX(2px); /* 轻微右移交互 */
+    }
+
+    .tree-node.active {
+      background-color: var(--active-bg);
+      color: var(--accent-blue);
+      box-shadow: 0 2px 10px rgba(162, 210, 255, 0.3);
+    }
+    
+    /* 解决蓝色文字太淡的问题，Active时使用深一点的主题色 */
+    .tree-node.active {
+      color: #3b82f6; 
+    }
+
+    .tree-node .icon {
+      margin-right: 8px;
+      font-size: 18px;
+      flex-shrink: 0;
+      color: var(--accent-blue);
+    }
+    
+    .tree-node.active .icon {
+      color: var(--accent-pink);
+    }
+    
+    .tree-node .arrow {
+      margin-right: 4px;
+      font-size: 12px;
+      flex-shrink: 0;
+      color: var(--text-light);
+      transition: transform 0.2s;
+    }
+
+    .level-1 { padding-left: 12px; }
+    .level-2 { padding-left: 32px; }
+    .level-3 { padding-left: 52px; }
+
+    /* === 核心：单行截断 CSS === */
+    .tree-node .label {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* === Pill-shape Tooltip === */
+    .smart-tooltip {
+      position: fixed;
+      background-color: #FFFFFF;
+      color: var(--text-dark);
+      padding: 8px 16px;
+      border-radius: 16px; /* 胶囊形状 */
+      font-size: 13px;
+      font-weight: 600;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(8px) scale(0.95);
+      transition: opacity 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0.25s;
+      box-shadow: var(--tooltip-shadow);
+      border: 1px solid rgba(162, 210, 255, 0.3);
+      white-space: normal;
+      max-width: 320px;
+      word-wrap: break-word;
+      line-height: 1.4;
+    }
+
+    .smart-tooltip.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+    
+    /* 伪造内容样式 */
+    .doc-title-wrapper {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 32px;
+    }
+    .doc-title-wrapper::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: -4px;
+      right: -4px;
+      height: 12px;
+      background-color: var(--accent-yellow);
+      z-index: -1;
+      border-radius: 6px;
+      opacity: 0.6;
+    }
+    .doc-h1 { font-family: 'Quicksand', sans-serif; font-size: 2.25rem; font-weight: 700; color: var(--text-dark); }
+    .doc-skeleton div { background: var(--bg-pastel); border-radius: 8px; margin-bottom: 16px; }
+    .doc-skeleton .p { height: 18px; width: 100%; }
+    .doc-skeleton .p-short { height: 18px; width: 75%; }
+    
+  </style>
+</head>
+<body>
+
+  <!-- 侧边栏 -->
+  <aside class="sidebar" id="sidebar">
+    <div class="tree-header">Product Documents</div>
+    
+    <div class="tree-container" id="tree-container">
+      <div class="tree-node level-1">
+        <i class="ph-bold ph-caret-down arrow"></i>
+        <i class="ph-fill ph-folder-open icon text-blue-400"></i>
+        <span class="label">2604_2 Iteration</span>
+      </div>
+      
+      <div class="tree-node level-2">
+        <i class="ph-bold ph-caret-down arrow"></i>
+        <i class="ph-fill ph-folder-open icon text-blue-400"></i>
+        <span class="label">F2_SidebarVisualOptimization_And_Interactions</span>
+      </div>
+
+      <!-- 短文件名 (不会触发 Tooltip) -->
+      <div class="tree-node level-3">
+        <i class="ph-fill ph-file-text icon"></i>
+        <span class="label">Feature_List.md</span>
+      </div>
+
+      <!-- 极长文件名 (必定触发截断和 Tooltip) -->
+      <div class="tree-node level-3 active">
+        <i class="ph-fill ph-file-text icon"></i>
+        <span class="label">Requirement_Background_For_Sidebar_Optimization_V2_Final_Draft.md</span>
+      </div>
+      
+      <div class="tree-node level-3">
+        <i class="ph-fill ph-file-text icon"></i>
+        <span class="label">User_Journey_Map_And_Edge_Cases_Analysis.md</span>
+      </div>
+
+      <div class="tree-node level-2">
+        <i class="ph-bold ph-caret-right arrow"></i>
+        <i class="ph-fill ph-folder icon text-blue-400"></i>
+        <span class="label">F1_ShareDocumentLink_Archived</span>
+      </div>
+    </div>
+
+    <!-- 拖拽手柄 -->
+    <div class="resizer" id="resizer"></div>
+  </aside>
+
+  <!-- 主内容区 -->
+  <main class="main-content">
+    <div class="max-w-3xl mx-auto">
+      <div class="mb-6">
+        <span class="text-xs font-bold text-blue-500 bg-blue-50 px-3 py-1.5 rounded-full uppercase tracking-wider">Pastel Style Demo</span>
+      </div>
+      
+      <div class="doc-title-wrapper">
+        <h1 class="doc-h1">Requirement Background For Sidebar Optimization V2 Final Draft</h1>
+      </div>
+      
+      <div class="doc-skeleton mt-8">
+        <div class="p"></div>
+        <div class="p"></div>
+        <div class="p-short"></div>
+      </div>
+      
+      <div class="mt-12 bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
+        <h2 class="text-xl font-bold text-slate-700 mb-4 font-['Quicksand']">✨ 交互体验指南 (Interaction Guide):</h2>
+        <ul class="list-disc pl-5 text-slate-600 space-y-3 text-[15px] font-medium">
+          <li><strong>Hover Tooltip:</strong> 将鼠标悬停在侧边栏被截断的超长文件上。等待 300ms，感受带有弹性动画的圆润白色 Tooltip 弹出。</li>
+          <li><strong>Smart Ignoring:</strong> 悬停在短文件 "Feature_List.md" 上，由于未截断，不会出现任何干扰提示。</li>
+          <li><strong>Soft Resize:</strong> 将鼠标移动到侧边栏与右侧白色主区域之间的缝隙中，拖拽调整宽度。感受光晕效果和主阅读区的自适应排版。</li>
+          <li><strong>Pastel Vibe:</strong> 留意节点 Hover 时的轻微右移动效、选中的高亮样式、以及全局的大圆角和柔和配色（完全匹配系统 Blueprint）。</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- 全局 Tooltip 容器 -->
+  <div class="smart-tooltip" id="tooltip"></div>
+
+  <script>
+    // === 1. Resizer 拖拽逻辑 ===
+    const sidebar = document.getElementById('sidebar');
+    const resizer = document.getElementById('resizer');
+    
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      resizer.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      
+      let newWidth = e.clientX - 16; // 减去 body padding
+      if (newWidth < 220) newWidth = 220;
+      if (newWidth > 500) newWidth = 500;
+      
+      sidebar.style.setProperty('--sidebar-width', `${newWidth}px`);
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isResizing) {
+        isResizing = false;
+        resizer.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    });
+
+    // === 2. Smart Ink Tooltip 逻辑 ===
+    const treeNodes = document.querySelectorAll('.tree-node');
+    const tooltip = document.getElementById('tooltip');
+    let tooltipTimeout;
+
+    treeNodes.forEach(node => {
+      const label = node.querySelector('.label');
+      if (!label) return;
+
+      node.addEventListener('mouseenter', (e) => {
+        if (label.scrollWidth > label.clientWidth) {
+          tooltipTimeout = setTimeout(() => {
+            const rect = node.getBoundingClientRect();
+            tooltip.textContent = label.textContent;
+            
+            const top = rect.bottom + 6;
+            const left = rect.left + 24;
+            
+            tooltip.style.top = `${top}px`;
+            tooltip.style.left = `${left}px`;
+            
+            tooltip.classList.add('show');
+          }, 300);
+        }
+      });
+
+      node.addEventListener('mouseleave', () => {
+        clearTimeout(tooltipTimeout);
+        tooltip.classList.remove('show');
+      });
+      
+      resizer.addEventListener('mousedown', () => {
+        clearTimeout(tooltipTimeout);
+        tooltip.classList.remove('show');
+      });
+    });
+  </script>
+</body>
+</html>

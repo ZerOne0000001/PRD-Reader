@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - PRD-Reader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-pastel: #FDF4F5;
+            --sidebar-bg: #E8F3F1;
+            --accent-pink: #FFB5C2;
+            --accent-blue: #A2D2FF;
+            --accent-yellow: #FDE293;
+            --text-dark: #4A4E69;
+            --text-light: #9CA3AF;
+            --github-black: #24292f;
+        }
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-pastel);
+            color: var(--text-dark);
+            overflow: hidden;
+        }
+
+        ::-webkit-scrollbar { display: none; width: 0; background: transparent; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .pill-shape { border-radius: 9999px; }
+        .card-shadow { box-shadow: 0 4px 15px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.05); }
+
+        .soft-input {
+            background: #F9FAFB;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 10px 16px;
+            color: #4A4E69;
+            font-weight: 600;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .soft-input:focus {
+            outline: none;
+            background: #FFFFFF;
+            border-color: var(--accent-blue);
+            box-shadow: 0 4px 15px rgba(162, 210, 255, 0.2);
+        }
+
+        .soft-btn {
+            background: var(--accent-blue);
+            color: white;
+            font-weight: 700;
+            padding: 10px 20px;
+            border-radius: 16px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .soft-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(162, 210, 255, 0.4);
+        }
+        .soft-btn-outline {
+            background: white;
+            color: #4A4E69;
+            border: 2px solid #E5E7EB;
+        }
+        .soft-btn-outline:hover {
+            border-color: #D1D5DB;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn.gitlab {
+            background: var(--accent-blue);
+            color: white;
+        }
+        .tab-btn.github {
+            background: var(--github-black);
+            color: white;
+        }
+        .tab-btn.inactive {
+            background: #F3F4F6;
+            color: var(--text-light);
+        }
+        .tab-btn.inactive:hover {
+            background: #E5E7EB;
+        }
+
+        .repo-card {
+            background: #F9FAFB;
+            border: 2px solid transparent;
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+        .repo-card:hover {
+            border-color: #E5E7EB;
+        }
+        .repo-card .delete-btn {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .repo-card:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .section-card {
+            background: white;
+            border: 2px solid #F3F4F6;
+            border-radius: 24px;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+        .section-card:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .status-connected {
+            background: white;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #10B981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .status-error {
+            color: #EF4444;
+            font-size: 14px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="flex h-screen w-screen p-3 gap-3">
+
+    <!-- 主内容区 -->
+    <main class="flex-1 flex flex-col relative bg-white rounded-[32px] card-shadow overflow-hidden border-4 border-[var(--bg-pastel)]">
+
+        <!-- 顶部导航条 -->
+        <header class="h-20 flex items-center justify-between px-10 border-b border-gray-50 bg-white sticky top-0 z-20">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#9CA3AF] hover:bg-[var(--accent-blue)] hover:text-white transition-all">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </a>
+                <div class="font-['Quicksand'] font-bold text-xl text-[#4A4E69]">后台配置</div>
+            </div>
+        </header>
+
+        <!-- 设置区域 -->
+        <div class="flex-1 overflow-y-auto p-12">
+            <div class="max-w-4xl mx-auto space-y-10">
+
+                <!-- 标题区 -->
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-[var(--accent-yellow)] rounded-[20px] flex items-center justify-center mx-auto mb-4 transform rotate-12 shadow-sm">
+                        <i data-lucide="settings-2" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h1 class="font-['Quicksand'] text-3xl font-bold text-[#4A4E69] mb-2">系统配置中心</h1>
+                    <p class="text-[#9CA3AF] font-semibold">管理您的代码托管平台连接和可见仓库白名单。</p>
+                </div>
+
+                <!-- 平台选择 Tab -->
+                <div class="flex items-center gap-3 justify-center mb-4">
+                    <button id="tab-gitlab" class="tab-btn gitlab" onclick="switchTab('gitlab')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 0 1-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 0 1 4.82 2a.43.43 0 0 1 .58 0 .42.42 0 0 1 .11.18l2.44 7.49h8.1l2.44-7.51A.42.42 0 0 1 18.6 2a.43.43 0 0 1 .58 0 .42.42 0 0 1 .11.18l2.44 7.51L23 13.45a.84.84 0 0 1-.35.94z"/>
+                        </svg>
+                        GitLab
+                    </button>
+                    <button id="tab-github" class="tab-btn github inactive" onclick="switchTab('github')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                        GitHub
+                    </button>
+                </div>
+
+                <!-- GitLab 配置区域 -->
+                <div id="section-gitlab" class="space-y-6">
+                    <!-- 模块 1: GitLab Token 配置 -->
+                    <section class="section-card">
+                        <div class="px-8 py-6 border-b-2 border-[#F3F4F6] bg-[#F9FAFB] flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                    <i data-lucide="key" class="w-6 h-6 text-[var(--accent-pink)]"></i>
+                                </div>
+                                <div>
+                                    <h2 class="font-['Quicksand'] text-xl font-bold text-[#4A4E69]">GitLab 访问令牌</h2>
+                                    <p class="text-sm text-[#9CA3AF] mt-1 font-semibold">用于全局拉取仓库文件。需要 <code class="bg-gray-100 px-1 py-0.5 rounded text-pink-600 font-mono">read_api</code> 权限。</p>
+                                </div>
+                            </div>
+                            <div id="gitlab-status" class="status-connected">
+                                <div class="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></div>
+                                已连接
+                            </div>
+                        </div>
+
+                        <div class="p-8 space-y-6">
+                            <div>
+                                <label class="block text-sm font-bold text-[#6B7280] mb-2 pl-2">GitLab 实例地址</label>
+                                <input type="text" value="https://gitlab.com" class="soft-input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-[#6B7280] mb-2 pl-2">个人/项目访问令牌 (Token)</label>
+                                <div class="relative">
+                                    <input type="password" value="glpat-xxxxxxxxxxxxxxxxxxxx" class="soft-input font-mono pr-12" id="gitlab-token">
+                                    <button class="absolute right-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[var(--accent-blue)] transition-colors" onclick="toggleTokenVisibility('gitlab-token', this)">
+                                        <i data-lucide="eye" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-end gap-4 pt-4">
+                                <button class="soft-btn soft-btn-outline">
+                                    测试连接
+                                </button>
+                                <button class="soft-btn">
+                                    <i data-lucide="save" class="w-4 h-4"></i>
+                                    保存配置
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 模块 2: GitLab 仓库白名单 -->
+                    <section class="section-card">
+                        <div class="px-8 py-6 border-b-2 border-[#F3F4F6] bg-[#F9FAFB] flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                    <i data-lucide="shield-check" class="w-6 h-6 text-[var(--accent-blue)]"></i>
+                                </div>
+                                <div>
+                                    <h2 class="font-['Quicksand'] text-xl font-bold text-[#4A4E69]">仓库白名单</h2>
+                                    <p class="text-sm text-[#9CA3AF] mt-1 font-semibold">只有添加到这里的仓库才会展示给前端用户。</p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-[#9CA3AF] font-semibold bg-[#F3F4F6] px-3 py-1 rounded-full">GitLab</span>
+                        </div>
+
+                        <div class="p-8">
+                            <div class="flex items-end gap-4 mb-8">
+                                <div class="flex-1">
+                                    <label class="block text-sm font-bold text-[#6B7280] mb-2 pl-2">添加仓库 (ID 或 路径)</label>
+                                    <input type="text" placeholder="例如: 12345 或 group/project" class="soft-input">
+                                </div>
+                                <button class="soft-btn h-[44px]">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    添加仓库
+                                </button>
+                            </div>
+
+                            <div class="space-y-3" id="gitlab-repo-list">
+                                <!-- 列表项 1 -->
+                                <div class="repo-card">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#9CA3AF] font-bold">FC</div>
+                                        <div>
+                                            <div class="font-bold text-[#4A4E69]">前端核心</div>
+                                            <div class="text-xs text-[#9CA3AF] font-mono mt-0.5">company/frontend-core</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="bg-[#10B981]/10 text-[#10B981] px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                                            <i data-lucide="check" class="w-3 h-3"></i> 正常
+                                        </span>
+                                        <button class="delete-btn w-8 h-8 rounded-full flex items-center justify-center text-[#9CA3AF] hover:bg-[#FEE2E2] hover:text-[#EF4444] transition-colors">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 列表项 2 -->
+                                <div class="repo-card">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#9CA3AF] font-bold">BS</div>
+                                        <div>
+                                            <div class="font-bold text-[#4A4E69]">后端服务</div>
+                                            <div class="text-xs text-[#9CA3AF] font-mono mt-0.5">company/backend-services</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="bg-[#10B981]/10 text-[#10B981] px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                                            <i data-lucide="check" class="w-3 h-3"></i> 正常
+                                        </span>
+                                        <button class="delete-btn w-8 h-8 rounded-full flex items-center justify-center text-[#9CA3AF] hover:bg-[#FEE2E2] hover:text-[#EF4444] transition-colors">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- GitHub 配置区域 (默认隐藏) -->
+                <div id="section-github" class="space-y-6 hidden">
+                    <!-- 模块 1: GitHub Token 配置 -->
+                    <section class="section-card">
+                        <div class="px-8 py-6 border-b-2 border-[#F3F4F6] bg-[#F9FAFB] flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                    <i data-lucide="key" class="w-6 h-6 text-[var(--accent-pink)]"></i>
+                                </div>
+                                <div>
+                                    <h2 class="font-['Quicksand'] text-xl font-bold text-[#4A4E69]">GitHub 访问令牌</h2>
+                                    <p class="text-sm text-[#9CA3AF] mt-1 font-semibold">用于全局拉取仓库文件。需要 <code class="bg-gray-100 px-1 py-0.5 rounded text-pink-600 font-mono">public_repo</code> + <code class="bg-gray-100 px-1 py-0.5 rounded text-pink-600 font-mono">repo</code> 权限。</p>
+                                </div>
+                            </div>
+                            <div id="github-status"></div>
+                        </div>
+
+                        <div class="p-8 space-y-6">
+                            <div>
+                                <label class="block text-sm font-bold text-[#6B7280] mb-2 pl-2">GitHub 实例地址</label>
+                                <input type="text" value="https://github.com" class="soft-input" placeholder="https://github.com">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-[#6B7280] mb-2 pl-2">个人访问令牌 (Personal Access Token)</label>
+                                <div class="relative">
+                                    <input type="password" class="soft-input font-mono pr-12" id="github-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+                                    <button class="absolute right-4 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[var(--accent-blue)] transition-colors" onclick="toggleTokenVisibility('github-token', this)">
+                                        <i data-lucide="eye" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-end gap-4 pt-4">
+                                <button class="soft-btn soft-btn-outline" onclick="testGitHubConnection()">
+                                    测试连接
+                                </button>
+                                <button class="soft-btn">
+                                    <i data-lucide="save" class="w-4 h-4"></i>
+                                    保存配置
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- 模块 2: GitHub 仓库白名单 -->
+                    <section class="section-card">
+                        <div class="px-8 py-6 border-b-2 border-[#F3F4F6] bg-[#F9FAFB] flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm">
+                                    <i data-lucide="shield-check" class="w-6 h-6 text-[var(--accent-blue)]"></i>
+                                </div>
+                                <div>
+                                    <h2 class="font-['Quicksand'] text-xl font-bold text-[#4A4E69]">仓库白名单</h2>
+                                    <p class="text-sm text-[#9CA3AF] mt-1 font-semibold">只有添加到这里的仓库才会展示给前端用户。</p>
+                                </div>
+                            </div>
+                            <span class="text-xs text-white font-semibold bg-[#24292f] px-3 py-1 rounded-full">GitHub</span>
+                        </div>
+
+                        <div class="p-8">
+                            <div class="flex items-end gap-4 mb-8">
+                                <div class="flex-1">
+                                    <label class="block text-sm font-bold text-[#6B7280] mb-2 pl-2">添加仓库 (owner/repo)</label>
+                                    <input type="text" placeholder="例如: owner/repository" class="soft-input" id="github-repo-input">
+                                </div>
+                                <button class="soft-btn h-[44px]" onclick="addGitHubRepo()">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    添加仓库
+                                </button>
+                            </div>
+
+                            <div class="space-y-3" id="github-repo-list">
+                                <!-- 空状态 -->
+                                <div id="github-empty-state" class="text-center py-12">
+                                    <div class="w-16 h-16 bg-[#F3F4F6] rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i data-lucide="inbox" class="w-8 h-8 text-[#9CA3AF]"></i>
+                                    </div>
+                                    <p class="text-[#9CA3AF] font-semibold">暂无 GitHub 仓库</p>
+                                    <p class="text-sm text-[#9CA3AF] mt-1">请在上方输入仓库路径添加</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        function switchTab(platform) {
+            const tabGitlab = document.getElementById('tab-gitlab');
+            const tabGithub = document.getElementById('tab-github');
+            const sectionGitlab = document.getElementById('section-gitlab');
+            const sectionGithub = document.getElementById('section-github');
+
+            if (platform === 'gitlab') {
+                tabGitlab.classList.remove('inactive');
+                tabGitlab.classList.add('gitlab');
+                tabGithub.classList.remove('github');
+                tabGithub.classList.add('inactive');
+                sectionGitlab.classList.remove('hidden');
+                sectionGithub.classList.add('hidden');
+            } else {
+                tabGithub.classList.remove('inactive');
+                tabGithub.classList.add('github');
+                tabGitlab.classList.remove('gitlab');
+                tabGitlab.classList.add('inactive');
+                sectionGithub.classList.remove('hidden');
+                sectionGitlab.classList.add('hidden');
+            }
+        }
+
+        function toggleTokenVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerHTML = '<i data-lucide="eye-off" class="w-5 h-5"></i>';
+            } else {
+                input.type = 'password';
+                btn.innerHTML = '<i data-lucide="eye" class="w-5 h-5"></i>';
+            }
+            lucide.createIcons();
+        }
+
+        function testGitHubConnection() {
+            const statusEl = document.getElementById('github-status');
+            const token = document.getElementById('github-token').value;
+
+            if (!token) {
+                statusEl.innerHTML = '<span class="status-error">请输入 Token</span>';
+                return;
+            }
+
+            statusEl.innerHTML = '<span class="text-blue-500 font-bold text-sm">测试中...</span>';
+
+            setTimeout(() => {
+                if (token.startsWith('ghp_')) {
+                    statusEl.innerHTML = '<div class="status-connected"><div class="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></div>已连接</div>';
+                } else {
+                    statusEl.innerHTML = '<span class="status-error">Token 格式无效</span>';
+                }
+            }, 1000);
+        }
+
+        function addGitHubRepo() {
+            const input = document.getElementById('github-repo-input');
+            const repoPath = input.value.trim();
+
+            if (!repoPath) return;
+
+            const list = document.getElementById('github-repo-list');
+            const emptyState = document.getElementById('github-empty-state');
+
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const parts = repoPath.split('/');
+            const name = parts[parts.length - 1] || repoPath;
+            const initials = name.substring(0, 2).toUpperCase();
+
+            const card = document.createElement('div');
+            card.className = 'repo-card';
+            card.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#9CA3AF] font-bold">${initials}</div>
+                    <div>
+                        <div class="font-bold text-[#4A4E69]">${name}</div>
+                        <div class="text-xs text-[#9CA3AF] font-mono mt-0.5">${repoPath}</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="bg-[#10B981]/10 text-[#10B981] px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                        <i data-lucide="check" class="w-3 h-3"></i> 正常
+                    </span>
+                    <button class="delete-btn w-8 h-8 rounded-full flex items-center justify-center text-[#9CA3AF] hover:bg-[#FEE2E2] hover:text-[#EF4444] transition-colors" onclick="this.closest('.repo-card').remove()">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `;
+            list.appendChild(card);
+            lucide.createIcons();
+
+            input.value = '';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRD-Reader | 选择工作区</title>
+  <!-- 引入 Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- 引入 Quicksand 和 Nunito 字体 (蓝图规范) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       Soft & Pastel Theme (马卡龙柔和主题 - 蓝图规范)
+       ========================================================================== */
+    :root {
+      /* 蓝图规定的色彩 */
+      --bg-pastel: #FDF4F5;
+      --sidebar-bg: #E8F3F1;
+      --text-dark: #4A4E69;
+      --accent-blue: #A2D2FF;
+      --accent-pink: #FFC8DD;
+      
+      --surface-color: #FFFFFF;
+      --text-secondary: #9CA3AF;
+      --border-light: rgba(74, 78, 105, 0.08);
+      
+      /* 空间体系 */
+      --spacing-xs: 0.5rem;
+      --spacing-sm: 1rem;
+      --spacing-md: 2rem;
+      --spacing-lg: 4rem;
+      --spacing-xl: 8rem;
+      
+      /* 蓝图规定的大圆角 */
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      
+      /* 动效缓动 - 弹性曲线 (Spring) */
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --duration-fast: 200ms;
+      --duration-normal: 400ms;
+      
+      /* 蓝图规定的排版 */
+      --font-heading: 'Quicksand', sans-serif;
+      --font-body: 'Nunito', sans-serif;
+      
+      /* 蓝图规定的柔和彩色投影 */
+      --shadow-soft: 0 8px 24px rgba(162, 210, 255, 0.4);
+      --shadow-hover: 0 16px 32px rgba(162, 210, 255, 0.6);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-pastel);
+      color: var(--text-dark);
+      line-height: 1.7; /* 蓝图规定行高 */
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* 隐藏滚动条但保留滚动功能 (蓝图规范) */
+    ::-webkit-scrollbar { display: none; }
+
+    /* ==========================================================================
+       右上角设置入口 (Settings Entry)
+       ========================================================================== */
+    .settings-btn {
+      position: absolute;
+      top: var(--spacing-md);
+      right: var(--spacing-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      background-color: var(--surface-color);
+      border-radius: 50%;
+      color: var(--text-dark);
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(74, 78, 105, 0.05);
+      transition: all var(--duration-fast) var(--ease-spring);
+      z-index: 100;
+    }
+
+    .settings-btn i {
+      font-size: 24px;
+      transition: transform var(--duration-normal) var(--ease-spring);
+    }
+
+    .settings-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-soft);
+      color: var(--accent-blue);
+    }
+
+    .settings-btn:hover i {
+      transform: rotate(45deg);
+    }
+
+    /* ==========================================================================
+       布局结构 (Layout)
+       ========================================================================== */
+    .container {
+      width: 100%;
+      max-width: 1200px; /* 放宽容器，容纳更多列 */
+      padding: var(--spacing-lg) var(--spacing-md);
+      margin-top: 5vh;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xl);
+      animation: fadeUpIn var(--duration-normal) var(--ease-spring) forwards;
+    }
+
+    /* ==========================================================================
+       头部信息区 (Header Area)
+       ========================================================================== */
+    .header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .logo-mark {
+      width: 64px;
+      height: 64px;
+      background-color: var(--surface-color);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-blue);
+      font-size: 32px;
+      margin-bottom: var(--spacing-sm);
+      box-shadow: var(--shadow-soft);
+    }
+    
+    .title {
+      font-family: var(--font-heading);
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      /* H1 黄色高光下划线装饰 (模拟蓝图规范) */
+      position: relative;
+      display: inline-block;
+      z-index: 1;
+    }
+    .title::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: -4px;
+      right: -4px;
+      height: 12px;
+      background-color: rgba(253, 224, 71, 0.6); /* 半透明黄色 */
+      z-index: -1;
+      border-radius: 6px;
+      transform: rotate(-1deg);
+    }
+
+    .subtitle {
+      font-size: 1.125rem;
+      color: var(--text-dark);
+      opacity: 0.8;
+      font-weight: 500;
+    }
+
+    /* ==========================================================================
+       网格卡片区 (Grid Area)
+       ========================================================================== */
+    .grid {
+      display: grid;
+      /* 修改为最小 240px，使其在桌面端能展示 3-4 列 */
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--spacing-md);
+      width: 100%;
+    }
+
+    .card {
+      background-color: var(--surface-color);
+      border-radius: var(--radius-md); /* 大圆角 */
+      padding: var(--spacing-md);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      transition: all var(--duration-fast) var(--ease-spring);
+      box-shadow: 0 4px 12px rgba(74, 78, 105, 0.05); /* 初始极淡阴影 */
+      border: 2px solid transparent;
+    }
+
+    /* Hover 状态：彩色投影与上浮，弹性十足 */
+    .card:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--accent-blue); /* 边框变蓝 */
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px; /* 偏圆角矩形 */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+    
+    /* 马卡龙色系的头像底色 */
+    .avatar.blue { background-color: var(--accent-blue); color: white; }
+    .avatar.pink { background-color: var(--accent-pink); color: white; }
+    .avatar.green { background-color: #BDE0FE; color: white; } /* 柔和绿/蓝 */
+    .avatar.yellow { background-color: #FDF1D6; color: #D4A373; }
+    .avatar.purple { background-color: #E2E8F0; color: #4F46E5; }
+
+    .repo-info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .repo-name {
+      font-family: var(--font-heading);
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 匹配 configStore 的 path 字段 */
+    .repo-path {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: monospace;
+    }
+
+    /* 匹配 configStore 的 default_branch 字段 */
+    .repo-branch {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      color: var(--text-dark);
+      background-color: var(--bg-pastel);
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-top: 8px;
+      align-self: flex-start;
+      font-weight: 600;
+    }
+
+    .card-arrow {
+      position: absolute;
+      top: var(--spacing-md);
+      right: var(--spacing-md);
+      color: var(--accent-blue);
+      font-size: 20px;
+      opacity: 0;
+      transform: translateX(-10px);
+      transition: all var(--duration-fast) var(--ease-spring);
+    }
+    
+    .card:hover .card-arrow {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ==========================================================================
+       动画 (Animations)
+       ========================================================================== */
+    @keyframes fadeUpIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .card:nth-child(1) { animation: fadeUpIn var(--duration-normal) var(--ease-spring) 50ms both; }
+    .card:nth-child(2) { animation: fadeUpIn var(--duration-normal) var(--ease-spring) 100ms both; }
+    .card:nth-child(3) { animation: fadeUpIn var(--duration-normal) var(--ease-spring) 150ms both; }
+    .card:nth-child(4) { animation: fadeUpIn var(--duration-normal) var(--ease-spring) 200ms both; }
+    .card:nth-child(5) { animation: fadeUpIn var(--duration-normal) var(--ease-spring) 250ms both; }
+    .card:nth-child(6) { animation: fadeUpIn var(--duration-normal) var(--ease-spring) 300ms both; }
+
+  </style>
+</head>
+<body>
+
+  <!-- 右上角后台设置入口 -->
+  <a href="admin.html" class="settings-btn" title="后台设置">
+    <i class="ph-bold ph-gear"></i>
+  </a>
+
+  <main class="container">
+    
+    <!-- 头部信息区 -->
+    <header class="header">
+      <div class="logo-mark">
+        <i class="ph-fill ph-book-open-text"></i>
+      </div>
+      <h1 class="title">PRD-Reader</h1>
+      <p class="subtitle">请选择要阅读的工作区 ✿</p>
+    </header>
+
+    <!-- 仓库卡片网格区 -->
+    <div class="grid">
+      
+      <!-- Card 1 -->
+      <a href="index.html?repo=PRD-Reader" class="card">
+        <div class="card-header">
+          <div class="avatar blue">P</div>
+          <div class="repo-info">
+            <h2 class="repo-name">PRD-Reader</h2>
+            <span class="repo-path">jiangjiahao/PRD-Reader</span>
+          </div>
+        </div>
+        <div class="repo-branch"><i class="ph-bold ph-git-branch"></i> main</div>
+        <i class="ph-bold ph-arrow-right card-arrow"></i>
+      </a>
+
+      <!-- Card 2 -->
+      <a href="index.html?repo=trae-skills" class="card">
+        <div class="card-header">
+          <div class="avatar pink">T</div>
+          <div class="repo-info">
+            <h2 class="repo-name">Trae-Skills</h2>
+            <span class="repo-path">group/trae-skills</span>
+          </div>
+        </div>
+        <div class="repo-branch"><i class="ph-bold ph-git-branch"></i> master</div>
+        <i class="ph-bold ph-arrow-right card-arrow"></i>
+      </a>
+
+      <!-- Card 3 -->
+      <a href="index.html?repo=Design-System" class="card">
+        <div class="card-header">
+          <div class="avatar green">D</div>
+          <div class="repo-info">
+            <h2 class="repo-name">Design-System</h2>
+            <span class="repo-path">frontend/design-system</span>
+          </div>
+        </div>
+        <div class="repo-branch"><i class="ph-bold ph-git-branch"></i> main</div>
+        <i class="ph-bold ph-arrow-right card-arrow"></i>
+      </a>
+
+      <!-- Card 4 -->
+      <a href="index.html?repo=User-Research" class="card">
+        <div class="card-header">
+          <div class="avatar yellow">U</div>
+          <div class="repo-info">
+            <h2 class="repo-name">User-Research</h2>
+            <span class="repo-path">product/user-research</span>
+          </div>
+        </div>
+        <div class="repo-branch"><i class="ph-bold ph-git-branch"></i> data-sync</div>
+        <i class="ph-bold ph-arrow-right card-arrow"></i>
+      </a>
+
+      <!-- Card 5 -->
+      <a href="index.html?repo=Backend-API" class="card">
+        <div class="card-header">
+          <div class="avatar purple">B</div>
+          <div class="repo-info">
+            <h2 class="repo-name">Backend-API</h2>
+            <span class="repo-path">backend/core-api</span>
+          </div>
+        </div>
+        <div class="repo-branch"><i class="ph-bold ph-git-branch"></i> develop</div>
+        <i class="ph-bold ph-arrow-right card-arrow"></i>
+      </a>
+
+    </div>
+
+  </main>
+
+</body>
+</html>

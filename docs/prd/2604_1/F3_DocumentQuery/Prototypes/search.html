@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索结果 - PRD Reader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-pastel: #FDF4F5;
+            --sidebar-bg: #E8F3F1;
+            --accent-pink: #FFB5C2;
+            --accent-blue: #A2D2FF;
+            --accent-yellow: #FDE293;
+            --text-dark: #4A4E69;
+            --text-light: #9CA3AF;
+        }
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-pastel);
+            color: var(--text-dark);
+            overflow: hidden;
+        }
+
+        .pill-shape { border-radius: 9999px; }
+        .soft-shadow { box-shadow: 0 10px 25px -5px rgba(162, 210, 255, 0.3); }
+        .card-shadow { box-shadow: 0 4px 15px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.05); }
+
+        ::-webkit-scrollbar { display: none; width: 0; background: transparent; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .soft-input {
+            background: #F9FAFB;
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 10px 20px;
+            font-weight: 600;
+            color: var(--text-dark);
+            transition: all 0.2s ease;
+        }
+        .soft-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            background: white;
+            box-shadow: 0 4px 15px rgba(162,210,255,0.2);
+        }
+
+        .soft-btn {
+            background: var(--accent-blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 16px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .soft-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(162,210,255,0.4);
+        }
+
+        .result-item {
+            padding: 20px;
+            background: #F9FAFB;
+            border-radius: 16px;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .result-item:hover {
+            background: #F3F4F6;
+            border-color: var(--accent-blue);
+        }
+
+        .highlight {
+            background: rgba(253, 226, 147, 0.4);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        .match-tag {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-weight: 700;
+        }
+
+        .filter-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #E5E7EB;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background: white;
+            position: relative;
+        }
+        .filter-checkbox:checked {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+        .filter-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            top: 1px;
+            left: 4px;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .page-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.15s ease;
+        }
+        .page-btn.default {
+            background: #F3F4F6;
+            color: var(--text-light);
+        }
+        .page-btn.default:hover:not(:disabled) {
+            background: #E5E7EB;
+        }
+        .page-btn.active {
+            background: var(--accent-blue);
+            color: white;
+        }
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .sidebar-panel {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* 动画 */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        .result-list > * {
+            animation: fadeIn 0.3s ease forwards;
+        }
+        .result-list > *:nth-child(1) { animation-delay: 0.05s; }
+        .result-list > *:nth-child(2) { animation-delay: 0.1s; }
+        .result-list > *:nth-child(3) { animation-delay: 0.15s; }
+        .result-list > *:nth-child(4) { animation-delay: 0.2s; }
+        .result-list > *:nth-child(5) { animation-delay: 0.25s; }
+    </style>
+</head>
+<body class="flex h-screen w-screen overflow-hidden relative">
+
+    <!-- 整体容器 -->
+    <div class="flex flex-col h-screen w-screen bg-[var(--bg-pastel)]">
+
+        <!-- 顶部导航栏 -->
+        <header class="h-20 bg-white/90 backdrop-blur-md border-b border-gray-50 px-10 flex items-center justify-between shrink-0">
+            <!-- 左区：返回 + 面包屑 -->
+            <div class="flex items-center gap-2 bg-[#F3F4F6] px-4 py-2 rounded-full text-sm font-bold text-[#6B7280]">
+                <span class="text-[var(--text-dark)]">搜索结果</span>
+            </div>
+
+            <!-- 右区：搜索框 + Pin -->
+            <div class="flex items-center gap-4">
+                <!-- 搜索框 - 与原 Reader 页面保持一致 -->
+                <div class="relative w-64">
+                    <input
+                        type="text"
+                        id="searchInput"
+                        value="PRD 文档"
+                        class="w-full bg-[#F3F4F6] border-2 border-transparent rounded-full px-5 py-2.5 text-sm font-bold text-[var(--text-dark)] focus:outline-none focus:border-[var(--accent-blue)] focus:bg-white transition-all"
+                        placeholder="搜索文档..."
+                    >
+                    <button
+                        onclick="performSearch()"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-sm hover:bg-[var(--accent-blue)]/10 transition-colors"
+                    >
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-[var(--accent-blue)]"></i>
+                    </button>
+                </div>
+
+                <!-- Pin 按钮 - 与原 Reader 页面保持一致 -->
+                <button class="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-light)] hover:text-[var(--text-dark)] transition-all">
+                    <i data-lucide="pin" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 flex overflow-hidden">
+
+            <!-- 左侧筛选面板 -->
+            <aside class="ml-3 my-3 w-64 bg-white rounded-[24px] card-shadow p-6 flex flex-col shrink-0">
+                <!-- 标题 -->
+                <div class="text-xs font-bold uppercase tracking-wider text-[var(--text-light)] mb-4">筛选</div>
+
+                <!-- 仓库列表 -->
+                <div class="mb-3 text-sm font-bold text-[var(--text-dark)]">仓库</div>
+                <div class="space-y-1">
+                    <label class="flex items-center gap-3 py-2 px-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                        <input type="checkbox" class="filter-checkbox" checked onchange="filterResults()">
+                        <span class="text-sm font-semibold text-[var(--text-dark)]">B端大框架</span>
+                    </label>
+                    <label class="flex items-center gap-3 py-2 px-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                        <input type="checkbox" class="filter-checkbox" checked onchange="filterResults()">
+                        <span class="text-sm font-semibold text-[var(--text-dark)]">产品设计文档</span>
+                    </label>
+                    <label class="flex items-center gap-3 py-2 px-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                        <input type="checkbox" class="filter-checkbox" checked onchange="filterResults()">
+                        <span class="text-sm font-semibold text-[var(--text-dark)]">技术架构</span>
+                    </label>
+                </div>
+
+                <!-- 分隔线 -->
+                <hr class="border-t border-gray-100 my-4">
+
+                <!-- 匹配类型 -->
+                <div class="mb-3 text-sm font-bold text-[var(--text-dark)]">匹配类型</div>
+                <div class="space-y-1">
+                    <label class="flex items-center gap-3 py-2 px-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                        <input type="checkbox" class="filter-checkbox" checked onchange="filterResults()">
+                        <span class="text-sm font-semibold text-[var(--text-dark)]">文件名</span>
+                    </label>
+                    <label class="flex items-center gap-3 py-2 px-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
+                        <input type="checkbox" class="filter-checkbox" checked onchange="filterResults()">
+                        <span class="text-sm font-semibold text-[var(--text-dark)]">内容</span>
+                    </label>
+                </div>
+            </aside>
+
+            <!-- 右侧结果区域 -->
+            <main class="flex-1 m-3 bg-white rounded-[24px] card-shadow flex flex-col overflow-hidden">
+
+                <!-- 状态切换标签 -->
+                <div class="flex items-center gap-4 px-8 pt-4">
+                    <button onclick="switchState('results')" class="text-sm font-bold px-4 py-2 rounded-full transition-all state-tab active" id="tab-results">
+                        搜索结果
+                    </button>
+                    <button onclick="switchState('loading')" class="text-sm font-bold px-4 py-2 rounded-full transition-all state-tab" id="tab-loading">
+                        加载状态
+                    </button>
+                    <button onclick="switchState('empty')" class="text-sm font-bold px-4 py-2 rounded-full transition-all state-tab" id="tab-empty">
+                        空结果
+                    </button>
+                    <button onclick="switchState('error')" class="text-sm font-bold px-4 py-2 rounded-full transition-all state-tab" id="tab-error">
+                        错误状态
+                    </button>
+                </div>
+
+                <style>
+                    .state-tab {
+                        color: var(--text-light);
+                        background: transparent;
+                    }
+                    .state-tab.active {
+                        color: var(--text-dark);
+                        background: #F3F4F6;
+                    }
+                    .state-tab:hover:not(.active) {
+                        color: var(--text-dark);
+                    }
+                </style>
+
+                <!-- 结果状态 -->
+                <div id="state-results" class="flex-1 flex flex-col overflow-hidden">
+                    <!-- 统计区 -->
+                    <div class="px-8 py-6 border-b border-gray-50 shrink-0">
+                        <span class="text-sm font-bold text-[var(--text-light)]">共找到 <span class="text-[var(--text-dark)]">3</span> 个结果</span>
+                    </div>
+
+                    <!-- 结果列表 -->
+                    <div class="flex-1 overflow-y-auto px-8 py-6">
+                        <div class="result-list space-y-4">
+                            <!-- 结果项 1 - 内容匹配 -->
+                            <div class="result-item" onclick="openFile()">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 bg-[#F3F4F6] rounded-lg flex items-center justify-center">
+                                            <i data-lucide="file-text" class="w-4 h-4 text-[var(--text-light)]"></i>
+                                        </div>
+                                        <span class="font-bold text-[var(--text-dark)]">PRD_产品需求文档.md</span>
+                                    </div>
+                                    <span class="match-tag bg-[var(--accent-blue)]/20 text-[var(--accent-blue)]">内容匹配</span>
+                                </div>
+                                <div class="text-sm text-[var(--text-light)] mb-3 ml-10">B端大框架 / 产品需求 / 2024</div>
+                                <div class="text-sm text-[var(--text-dark)] leading-relaxed">
+                                    本文档主要描述了<span class="highlight">PRD</span>系统的整体架构设计方案，包括前端分离、后端微服务化等核心内容。系统采用前后端分离架构，<span class="highlight">文档</span>中详细定义了...
+                                </div>
+                            </div>
+
+                            <!-- 结果项 2 - 文件名匹配 -->
+                            <div class="result-item" onclick="openFile()">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 bg-[#F3F4F6] rounded-lg flex items-center justify-center">
+                                            <i data-lucide="file-text" class="w-4 h-4 text-[var(--text-light)]"></i>
+                                        </div>
+                                        <span class="font-bold text-[var(--text-dark)]">PRD_交互设计<span class="highlight">文档</span>.md</span>
+                                    </div>
+                                    <span class="match-tag bg-[var(--accent-yellow)]/40 text-[#B8860B]">文件名匹配</span>
+                                </div>
+                                <div class="text-sm text-[var(--text-light)] mb-3 ml-10">产品设计<span class="highlight">文档</span> / 交互设计</div>
+                                <div class="text-sm text-[var(--text-dark)] leading-relaxed">
+                                    点击查看完整的交互设计<span class="highlight">文档</span>，包含所有页面的流程图和状态说明。
+                                </div>
+                            </div>
+
+                            <!-- 结果项 3 - 内容匹配 -->
+                            <div class="result-item" onclick="openFile()">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 bg-[#F3F4F6] rounded-lg flex items-center justify-center">
+                                            <i data-lucide="file-text" class="w-4 h-4 text-[var(--text-light)]"></i>
+                                        </div>
+                                        <span class="font-bold text-[var(--text-dark)]">需求<span class="highlight">PRD</span>_V2.md</span>
+                                    </div>
+                                    <span class="match-tag bg-[var(--accent-blue)]/20 text-[var(--accent-blue)]">内容匹配</span>
+                                </div>
+                                <div class="text-sm text-[var(--text-light)] mb-3 ml-10">B端大框架 / 需求文档</div>
+                                <div class="text-sm text-[var(--text-dark)] leading-relaxed">
+                                    本次<span class="highlight">PRD</span>迭代主要针对用户反馈的体验问题进行优化，新增了批注功能和版本对比能力。详细变更请参阅变更<span class="highlight">文档</span>章节。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 分页区 -->
+                    <div class="px-8 py-4 border-t border-gray-50 flex items-center justify-between shrink-0">
+                        <span class="text-sm text-[var(--text-light)]">第 1/5 页</span>
+                        <div class="flex items-center gap-2">
+                            <button class="page-btn default" disabled>
+                                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                            </button>
+                            <button class="page-btn active">1</button>
+                            <button class="page-btn default" onclick="alert('切换到第2页')">2</button>
+                            <button class="page-btn default" onclick="alert('切换到第3页')">3</button>
+                            <span class="w-10 text-center text-[var(--text-light)]">...</span>
+                            <button class="page-btn default" onclick="alert('切换到第5页')">5</button>
+                            <button class="page-btn default" onclick="alert('切换到第2页')">
+                                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 加载状态 -->
+                <div id="state-loading" class="flex-1 flex-col items-center justify-center hidden">
+                    <div class="w-16 h-16 border-4 border-[var(--accent-blue)]/20 border-t-[var(--accent-blue)] rounded-full animate-spin"></div>
+                    <div class="mt-4 text-[var(--text-light)] font-bold">搜索中...</div>
+                </div>
+
+                <!-- 空结果状态 -->
+                <div id="state-empty" class="flex-1 flex-col items-center justify-center hidden">
+                    <div class="w-32 h-32 bg-[#F9FAFB] rounded-full flex items-center justify-center mb-6">
+                        <i data-lucide="search-x" class="w-16 h-16 text-[var(--text-light)]"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-[var(--text-dark)] mb-2">未找到相关文档</h3>
+                    <p class="text-sm text-[var(--text-light)] mb-6">请尝试其他关键词</p>
+                    <button class="soft-btn">
+                        <i data-lucide="search" class="w-4 h-4 inline mr-2"></i>
+                        重新搜索
+                    </button>
+                </div>
+
+                <!-- 错误状态 -->
+                <div id="state-error" class="flex-1 flex-col items-center justify-center hidden">
+                    <div class="w-16 h-16 text-red-400 mb-4">
+                        <i data-lucide="alert-circle" class="w-16 h-16"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-[var(--text-dark)] mb-2">搜索失败</h3>
+                    <p class="text-sm text-[var(--text-light)] mb-6">网络连接异常，请稍后重试</p>
+                    <button class="soft-btn">
+                        <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-2"></i>
+                        重新尝试
+                    </button>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // 初始化 Lucide 图标
+        lucide.createIcons();
+
+        // 返回上一页
+        function goBack() {
+            alert('返回 Reader 页面');
+        }
+
+        // 执行搜索
+        function performSearch() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim()) {
+                alert('跳转到 /search?q=' + encodeURIComponent(query));
+            }
+        }
+
+        // 切换状态显示
+        function switchState(state) {
+            // 隐藏所有状态
+            document.getElementById('state-results').classList.add('hidden');
+            document.getElementById('state-loading').classList.add('hidden');
+            document.getElementById('state-empty').classList.add('hidden');
+            document.getElementById('state-error').classList.add('hidden');
+
+            // 移除所有标签的 active 状态
+            document.querySelectorAll('.state-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // 显示目标状态
+            document.getElementById('state-' + state).classList.remove('hidden');
+            document.getElementById('state-' + state).classList.add('flex');
+            document.getElementById('tab-' + state).classList.add('active');
+
+            // 重新初始化图标
+            lucide.createIcons();
+        }
+
+        // 打开文件
+        function openFile() {
+            window.open('/reader?repo=1344&file=PRD_Doc.md', '_blank');
+        }
+
+        // 筛选结果（示例）
+        function filterResults() {
+            console.log('Filter changed');
+        }
+
+        // 搜索框回车事件
+        document.getElementById('searchInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    </script>
+</body>
+</html>
