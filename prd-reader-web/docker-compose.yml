@@ -4,7 +4,7 @@ services:
   # 后端 API 服务
   backend:
     build:
-      context: ./prd-reader-web
+      context: .
       target: backend   # 对应 Dockerfile 中的 Stage 2
     container_name: prd-reader-backend
     restart: unless-stopped
@@ -13,12 +13,12 @@ services:
       # 如果后端需要其他环境变量配置，可以直接在此处追加
       # - NODE_ENV=production
     # env_file:
-    #   - ./prd-reader-web/.env  # 可以取消注释，直接加载 .env 文件中的配置
+    #   - ./.env  # 可以取消注释，直接加载 .env 文件中的配置
 
   # 前端 Web 与 Nginx 反向代理
   frontend:
     build:
-      context: ./prd-reader-web
+      context: .
       target: frontend  # 对应 Dockerfile 中的 Stage 3
     container_name: prd-reader-frontend
     restart: unless-stopped
