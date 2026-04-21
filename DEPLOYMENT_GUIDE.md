@@ -1,8 +1,62 @@
-# PRD-Reader 服务器部署与保活指南 (PM2 + Nginx)
+# PRD-Reader 服务器部署与保活指南 (PM2 + Nginx / Docker)
 
-本指南详细说明了如何将 PRD-Reader 项目（Vite 前端 + Node.js/Express 后端）部署到生产服务器（Ubuntu/CentOS），并通过 PM2 实现后端进程保活，使用 Nginx 进行前端静态资源托管和后端 API 的反向代理。
+本指南详细说明了如何将 PRD-Reader 项目（Vite 前端 + Node.js/Express 后端）部署到生产服务器（Ubuntu/CentOS）。我们提供两种部署方案：**方案 A (推荐)：使用 Docker Compose 容器化部署**，以及 **方案 B：传统的 PM2 + Nginx 裸机部署**。
 
-## 阶段一：服务器环境准备 (Environment Setup)
+---
+
+## 方案 A：使用 Docker Compose 部署 (推荐)
+
+此方案基于已配置好的 `docker-compose.yml` 和 `Dockerfile` 进行一键构建和部署。不需要在宿主机安装 Node.js、Nginx 和 PM2，所有服务被隔离在独立的容器中。
+
+### 1. 环境准备 (安装 Docker)
+以 Ubuntu 22.04 为例，安装官方 Docker 及 Docker Compose 插件：
+```bash
+# 下载并运行 Docker 安装脚本
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# 启动 Docker 服务
+sudo systemctl enable --now docker
+```
+
+### 2. 配置与启动
+将项目代码完整上传至服务器。
+```bash
+# 1. 进入项目根目录 (包含 docker-compose.yml 的目录)
+cd /path/to/PRD-Reader
+
+# 2. 创建或修改环境变量 (根据需要配置后端)
+# cp prd-reader-web/.env.example prd-reader-web/.env
+
+# 3. 后台一键构建并启动所有服务 (Nginx前端 + Node后端)
+sudo docker compose up -d --build
+```
+
+### 3. Docker 日常维护
+- **查看运行日志**：
+  ```bash
+  # 查看所有容器日志
+  sudo docker compose logs -f
+
+  # 仅查看后端接口日志
+  sudo docker compose logs -f backend
+  ```
+- **重新构建并部署** (代码更新后)：
+  ```bash
+  sudo docker compose up -d --build
+  ```
+- **停止服务**：
+  ```bash
+  sudo docker compose down
+  ```
+
+---
+
+## 方案 B：传统的 PM2 + Nginx 裸机部署
+
+如果您的服务器无法安装 Docker 或者您更倾向于原生部署，请参考以下传统步骤。
+
+### 阶段一：服务器环境准备 (Environment Setup)
 
 在服务器上，首先需要安装必备的基础运行环境：
 
