@@ -1,7 +1,8 @@
 export const testGitlabConnection = async (url: string, token: string): Promise<boolean> => {
   try {
-    // 校验连接
-    const response = await fetch(`${url}/api/v4/version`, {
+    const cleanUrl = url.replace(/\/$/, '')
+    // 校验连接, 推荐使用 /api/v4/user 而不是 /api/v4/version，因为某些版本 version 需要管理员权限
+    const response = await fetch(`${cleanUrl}/api/v4/user`, {
       headers: { 'PRIVATE-TOKEN': token }
     })
     return response.ok
@@ -11,7 +12,8 @@ export const testGitlabConnection = async (url: string, token: string): Promise<
 }
 
 export const fetchProjectDetails = async (url: string, token: string, idOrPath: string) => {
-  const response = await fetch(`${url}/api/v4/projects/${encodeURIComponent(idOrPath)}`, {
+  const cleanUrl = url.replace(/\/$/, '')
+  const response = await fetch(`${cleanUrl}/api/v4/projects/${encodeURIComponent(idOrPath)}`, {
     headers: { 'PRIVATE-TOKEN': token }
   })
   if (!response.ok) throw new Error('Project not found')
@@ -19,12 +21,13 @@ export const fetchProjectDetails = async (url: string, token: string, idOrPath: 
 }
 
 export const fetchProjectTree = async (url: string, token: string, projectId: string, ref: string = 'main') => {
+  const cleanUrl = url.replace(/\/$/, '')
   const allItems: any[] = []
   let page = 1
   const perPage = 100 // GitLab API 允许的最大 per_page 通常是 100
 
   while (true) {
-    const response = await fetch(`${url}/api/v4/projects/${projectId}/repository/tree?recursive=true&per_page=${perPage}&page=${page}&ref=${ref}`, {
+    const response = await fetch(`${cleanUrl}/api/v4/projects/${projectId}/repository/tree?recursive=true&per_page=${perPage}&page=${page}&ref=${ref}`, {
       headers: { 'PRIVATE-TOKEN': token }
     })
     
@@ -48,7 +51,8 @@ export const fetchProjectTree = async (url: string, token: string, projectId: st
 }
 
 export const fetchFileRaw = async (url: string, token: string, projectId: string, filePath: string, ref: string = 'main') => {
-  const response = await fetch(`${url}/api/v4/projects/${projectId}/repository/files/${encodeURIComponent(filePath)}/raw?ref=${ref}`, {
+  const cleanUrl = url.replace(/\/$/, '')
+  const response = await fetch(`${cleanUrl}/api/v4/projects/${projectId}/repository/files/${encodeURIComponent(filePath)}/raw?ref=${ref}`, {
     headers: { 'PRIVATE-TOKEN': token }
   })
   if (!response.ok) throw new Error('Failed to fetch file')

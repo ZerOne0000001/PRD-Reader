@@ -79,7 +79,8 @@ router.post('/repos', async (req, res) => {
       }
       project = await fetchRepoDetails(platformConfig.instanceUrl, platformConfig.token, owner, repo)
     } else {
-      const response = await fetch(`${platformConfig.instanceUrl}/api/v4/projects/${encodeURIComponent(idOrPath)}`, {
+      const cleanUrl = platformConfig.instanceUrl.replace(/\/$/, '')
+      const response = await fetch(`${cleanUrl}/api/v4/projects/${encodeURIComponent(idOrPath)}`, {
         headers: { 'PRIVATE-TOKEN': platformConfig.token }
       })
       if (!response.ok) throw new Error('Project not found')

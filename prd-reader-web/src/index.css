@@ -64,4 +64,6 @@
   .prose-soft table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
   .prose-soft th, .prose-soft td { padding: 0.75rem; border-bottom: 1px solid #E5E7EB; text-align: left; color: #5D607B; }
   .prose-soft th { font-weight: 700; color: #4A4E69; background: #F9FAFB; }
+  .prose-soft img { cursor: zoom-in; border-radius: 16px; border: 2px solid #F3F4F6; transition: transform 0.2s ease, box-shadow 0.2s ease; display: block; max-width: 100%; margin: 2rem auto; }
+  .prose-soft img:hover { transform: scale(1.01) translateY(-2px); box-shadow: 0 15px 30px -5px rgba(162, 210, 255, 0.3); border-color: var(--accent-blue); }
 }

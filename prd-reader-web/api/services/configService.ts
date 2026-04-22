@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const CONFIG_PATH = path.join(__dirname, '../../config.json')
+const CONFIG_PATH = process.env.CONFIG_PATH || path.join(__dirname, '../../config.json')
 
 export interface Repository {
   id: string
@@ -51,6 +51,7 @@ const isLegacyConfig = (config: any): config is LegacyConfig => {
 }
 
 export const getConfig = (): Config => {
+  let config: Config = { ...defaultConfig }
   try {
     if (fs.existsSync(CONFIG_PATH)) {
       const data = fs.readFileSync(CONFIG_PATH, 'utf-8')
@@ -71,19 +72,38 @@ export const getConfig = (): Config => {
           }
         }
         saveConfig(migrated)
-        return migrated
+        config = migrated
+      } else {
+        config = parsed
       }
-
-      return parsed
     }
   } catch (e) {
     console.error('Failed to read config', e)
   }
-  return defaultConfig
+
+  // Fallback to environment variables if not configured
+  if (!config.gitlab.token && process.env.GITLAB_TOKEN) {
+    config.gitlab.token = process.env.GITLAB_TOKEN
+  }
+  if (process.env.GITLAB_INSTANCE_URL) {
+    config.gitlab.instanceUrl = process.env.GITLAB_INSTANCE_URL
+  }
+  if (!config.github.token && process.env.GITHUB_TOKEN) {
+    config.github.token = process.env.GITHUB_TOKEN
+  }
+  if (process.env.DEFAULT_PLATFORM && (process.env.DEFAULT_PLATFORM === 'github' || process.env.DEFAULT_PLATFORM === 'gitlab')) {
+    config.platform = process.env.DEFAULT_PLATFORM as 'github' | 'gitlab'
+  }
+
+  return config
 }
 
 export const saveConfig = (config: Config): void => {
   try {
+    const dir = path.dirname(CONFIG_PATH)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8')
   } catch (e) {
     console.error('Failed to save config', e)

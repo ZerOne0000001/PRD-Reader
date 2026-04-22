@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Pin, ArrowLeft, ArrowRightToLine, ChevronDown, ChevronRight, Cloud, Folder, FileText, Monitor, Copy, Settings, Lock, Key, X, List, Search, Image as ImageIcon, Link, Check, LayoutGrid, Home as HomeIcon } from 'lucide-react'
+import { Pin, ArrowLeft, ArrowRightToLine, ChevronDown, ChevronRight, Cloud, Folder, FileText, Monitor, Copy, Settings, Lock, Key, X, List, Search, Image as ImageIcon, Link, Check, LayoutGrid, Home as HomeIcon, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react'
 import { useReaderStore, RepoTree, GitlabNode } from '@/store/readerStore'
 import { useConfigStore } from '@/store/configStore'
 import { marked } from 'marked'
@@ -105,6 +105,89 @@ const copyToClipboard = async (text: string): Promise<boolean> => {
     return false;
   }
 }
+
+// --- Image Viewer Modal ---
+const ImageViewer = ({ src, alt, onClose }: { src: string, alt?: string, onClose: () => void }) => {
+  const [scale, setScale] = useState(1);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+    // 阻止页面滚动
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    setScale(s => Math.max(0.1, Math.min(s * zoomFactor, 10)));
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    setStartPos({ x: e.clientX - pos.x, y: e.clientY - pos.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setPos({ x: e.clientX - startPos.x, y: e.clientY - startPos.y });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm select-none"
+      onWheel={handleWheel}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      <button 
+        onClick={onClose} 
+        className="absolute top-6 right-6 text-white p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+      >
+         <X className="w-6 h-6" />
+      </button>
+      
+      <div className="absolute bottom-8 flex items-center gap-6 bg-[#2B2D42]/90 text-white px-6 py-3 rounded-full shadow-2xl backdrop-blur-md z-10 border border-white/10">
+         <button onClick={() => setScale(s => Math.max(0.1, s * 0.8))} className="hover:text-[var(--accent-blue)] transition-colors p-1" title="缩小">
+           <ZoomOut className="w-5 h-5" />
+         </button>
+         <span className="w-16 text-center font-mono font-bold text-sm select-none">{Math.round(scale * 100)}%</span>
+         <button onClick={() => setScale(s => Math.min(10, s * 1.2))} className="hover:text-[var(--accent-blue)] transition-colors p-1" title="放大">
+           <ZoomIn className="w-5 h-5" />
+         </button>
+         <div className="w-px h-5 bg-white/20 mx-1"></div>
+         <button onClick={() => { setScale(1); setPos({x:0, y:0}); }} className="hover:text-[var(--accent-blue)] transition-colors p-1 flex items-center gap-2 text-sm font-bold" title="还原">
+           <RotateCcw className="w-4 h-4" />
+           还原
+         </button>
+      </div>
+
+      <div 
+        className="w-full h-full flex items-center justify-center overflow-hidden"
+        onMouseDown={handleMouseDown}
+      >
+        <img 
+          src={src} 
+          alt={alt || 'Preview'} 
+          className={`max-w-[90vw] max-h-[90vh] object-contain transition-transform duration-[50ms] ease-linear ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          style={{ transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})` }}
+          draggable={false}
+        />
+      </div>
+    </div>,
+    document.body
+  );
+}
+// ----------------------------
 
 const TreeNode = ({ node, repo, onFileClick, onShareClick, depth = 0, onDrillDown }: { node: GitlabNode, repo: RepoTree, onFileClick: (repoId: string, filePath: string) => void, onShareClick: (e: React.MouseEvent, repo: RepoTree, node: GitlabNode, gitUrl: string) => void, depth?: number, onDrillDown: (node: GitlabNode) => void }) => {
   const [expanded, setExpanded] = useState(false)
@@ -214,6 +297,8 @@ export default function Reader() {
   const whitelistRepos = platformConfig?.repositories || []
   const currentRepoName = searchParams.get('repo') || ''
   const currentRepoInfo = whitelistRepos.find(r => String(r.id) === currentRepoName || r.name === currentRepoName || r.path === currentRepoName)
+
+  const [previewImage, setPreviewImage] = useState<{ src: string, alt?: string } | null>(null)
 
   const [initialLoaded, setInitialLoaded] = useState(false)
   const [notFoundState, setNotFoundState] = useState<{ type: '403' | '404' } | null>(null)
@@ -543,19 +628,27 @@ export default function Reader() {
 
       return (
         <article 
-          className="prose prose-soft max-w-3xl mx-auto pb-32 w-full"
+          className="prose prose-soft max-w-3xl mx-auto pb-32 w-full markdown-body"
           dangerouslySetInnerHTML={{ __html: cleanHtml }}
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.tagName === 'IMG') {
+              const img = target as HTMLImageElement;
+              setPreviewImage({ src: img.src, alt: img.alt });
+            }
+          }}
         />
       )
     }
 
     if (currentFile.type === 'image') {
       return (
-        <div className="flex items-center justify-center h-full w-full bg-gray-50/50 rounded-2xl">
+        <div className="flex items-center justify-center h-full w-full bg-gray-50/50 rounded-2xl p-8">
           <img 
             src={currentFile.content} 
             alt={currentFile.filePath} 
-            className="max-w-full max-h-full object-contain shadow-sm border border-gray-100 rounded-lg"
+            className="max-w-full max-h-full object-contain shadow-sm border border-gray-100 rounded-lg cursor-zoom-in hover:shadow-md transition-shadow"
+            onClick={() => setPreviewImage({ src: currentFile.content, alt: currentFile.filePath })}
           />
         </div>
       )
@@ -967,6 +1060,15 @@ export default function Reader() {
           <div className="w-2 h-2 rounded-full bg-green-400" />
           {toast}
         </div>
+      )}
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <ImageViewer 
+          src={previewImage.src} 
+          alt={previewImage.alt} 
+          onClose={() => setPreviewImage(null)} 
+        />
       )}
     </div>
   )
