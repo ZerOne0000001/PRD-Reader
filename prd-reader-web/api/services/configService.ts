@@ -4,7 +4,8 @@ import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const CONFIG_PATH = process.env.CONFIG_PATH || path.join(__dirname, '../../config.json')
+const DEFAULT_CONFIG_PATH = path.join(__dirname, '../../config.json')
+const CONFIG_PATH = process.env.CONFIG_PATH ? path.resolve(process.env.CONFIG_PATH) : DEFAULT_CONFIG_PATH
 
 export interface Repository {
   id: string
@@ -50,11 +51,25 @@ const isLegacyConfig = (config: any): config is LegacyConfig => {
   return config && 'instanceUrl' in config && 'token' in config && 'repositories' in config && !('platform' in config)
 }
 
+const getReadableConfigPath = () => {
+  if (fs.existsSync(CONFIG_PATH)) {
+    return CONFIG_PATH
+  }
+
+  if (CONFIG_PATH !== DEFAULT_CONFIG_PATH && fs.existsSync(DEFAULT_CONFIG_PATH)) {
+    return DEFAULT_CONFIG_PATH
+  }
+
+  return CONFIG_PATH
+}
+
 export const getConfig = (): Config => {
   let config: Config = { ...defaultConfig }
   try {
-    if (fs.existsSync(CONFIG_PATH)) {
-      const data = fs.readFileSync(CONFIG_PATH, 'utf-8')
+    const readableConfigPath = getReadableConfigPath()
+
+    if (fs.existsSync(readableConfigPath)) {
+      const data = fs.readFileSync(readableConfigPath, 'utf-8')
       const parsed = JSON.parse(data)
 
       if (isLegacyConfig(parsed)) {
@@ -100,12 +115,10 @@ export const getConfig = (): Config => {
 
 export const saveConfig = (config: Config): void => {
   try {
-    const dir = path.dirname(CONFIG_PATH)
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
-    }
+    fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true })
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf-8')
   } catch (e) {
     console.error('Failed to save config', e)
+    throw e
   }
 }

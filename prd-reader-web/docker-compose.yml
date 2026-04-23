@@ -16,10 +16,12 @@ services:
       # 代理设置 (如果需要通过代理访问 GitHub，请取消注释并配置代理地址，需结合代码支持或全局代理设置)
       # - HTTP_PROXY=http://127.0.0.1:7890
       # - HTTPS_PROXY=http://127.0.0.1:7890
-    volumes:
-      - ./data:/app/data  # 持久化配置文件，防止重启后丢失
+      # 如果后端需要其他环境变量配置，可以直接在此处追加
+      # - NODE_ENV=production
     # env_file:
     #   - ./.env  # 可以取消注释，直接加载 .env 文件中的配置
+    volumes:
+      - ./data:/app/data  # 持久化配置文件，防止重启后丢失
 
   # 前端 Web 与 Nginx 反向代理
   frontend:

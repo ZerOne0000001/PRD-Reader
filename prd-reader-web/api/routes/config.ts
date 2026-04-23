@@ -5,26 +5,30 @@ import { testGithubConnection, fetchRepoDetails } from '../services/githubServic
 
 const router = Router()
 
-router.get('/', (req, res) => {
+router.get('/', (_req, res) => {
   res.json({ success: true, data: getConfig() })
 })
 
 router.post('/', (req, res) => {
-  const { platform, gitlab, github } = req.body
-  const config = getConfig()
+  try {
+    const { platform, gitlab, github } = req.body
+    const config = getConfig()
 
-  if (platform !== undefined) config.platform = platform
-  if (gitlab) {
-    if (gitlab.instanceUrl) config.gitlab.instanceUrl = gitlab.instanceUrl
-    if (gitlab.token !== undefined) config.gitlab.token = gitlab.token
-  }
-  if (github) {
-    if (github.instanceUrl) config.github.instanceUrl = github.instanceUrl
-    if (github.token !== undefined) config.github.token = github.token
-  }
+    if (platform !== undefined) config.platform = platform
+    if (gitlab) {
+      if (gitlab.instanceUrl) config.gitlab.instanceUrl = gitlab.instanceUrl
+      if (gitlab.token !== undefined) config.gitlab.token = gitlab.token
+    }
+    if (github) {
+      if (github.instanceUrl) config.github.instanceUrl = github.instanceUrl
+      if (github.token !== undefined) config.github.token = github.token
+    }
 
-  saveConfig(config)
-  res.json({ success: true, data: config })
+    saveConfig(config)
+    res.json({ success: true, data: config })
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || '配置保存失败' })
+  }
 })
 
 router.post('/platform', (req, res) => {
@@ -33,8 +37,12 @@ router.post('/platform', (req, res) => {
 
   if (platform === 'gitlab' || platform === 'github') {
     config.platform = platform
-    saveConfig(config)
-    res.json({ success: true, data: config })
+    try {
+      saveConfig(config)
+      res.json({ success: true, data: config })
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message || '平台切换保存失败' })
+    }
   } else {
     res.status(400).json({ success: false, error: 'Invalid platform' })
   }
@@ -44,11 +52,11 @@ router.post('/test', async (req, res) => {
   const { platform, instanceUrl, token } = req.body
 
   if (platform === 'github') {
-    const isValid = await testGithubConnection(instanceUrl, token)
-    res.json({ success: isValid })
+    const result = await testGithubConnection(instanceUrl, token)
+    res.status(result.success ? 200 : 400).json(result)
   } else {
-    const isValid = await testGitlabConnection(instanceUrl, token)
-    res.json({ success: isValid })
+    const result = await testGitlabConnection(instanceUrl, token)
+    res.status(result.success ? 200 : 400).json(result)
   }
 })
 
@@ -114,9 +122,13 @@ router.delete('/repos/:id', (req, res) => {
   const config = getConfig()
   const platformConfig = platform === 'github' ? config.github : config.gitlab
 
-  platformConfig.repositories = platformConfig.repositories.filter(r => String(r.id) !== String(req.params.id))
-  saveConfig(config)
-  res.json({ success: true })
+  try {
+    platformConfig.repositories = platformConfig.repositories.filter(r => String(r.id) !== String(req.params.id))
+    saveConfig(config)
+    res.json({ success: true })
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || '删除仓库失败' })
+  }
 })
 
 export default router

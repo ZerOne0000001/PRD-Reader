@@ -1,18 +1,30 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Settings2, Key, Eye, EyeOff, Save, ShieldCheck, Plus, Check, Trash2 } from 'lucide-react'
 import { useConfigStore } from '@/store/configStore'
 
+type PlatformKey = 'gitlab' | 'github'
+type DraftState = Record<PlatformKey, { instanceUrl: string; token: string; repoInput: string }>
+type ConnectionState = Record<PlatformKey, 'idle' | 'testing' | 'success' | 'error'>
+
 export default function Admin() {
   const navigate = useNavigate()
-  const { config, fetchConfig, updateConfig, switchPlatform, testConnection, addRepository, removeRepository, loading, error } = useConfigStore()
+  const { config, fetchConfig, updateConfig, switchPlatform, testConnection, addRepository, removeRepository, loading } = useConfigStore()
 
-  const [activeTab, setActiveTab] = useState<'gitlab' | 'github'>('gitlab')
-  const [instanceUrl, setInstanceUrl] = useState('')
-  const [token, setToken] = useState('')
+  const [activeTab, setActiveTab] = useState<PlatformKey>('gitlab')
+  const [drafts, setDrafts] = useState<DraftState>({
+    gitlab: { instanceUrl: '', token: '', repoInput: '' },
+    github: { instanceUrl: '', token: '', repoInput: '' }
+  })
   const [showToken, setShowToken] = useState(false)
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
-  const [repoInput, setRepoInput] = useState('')
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionState>({
+    gitlab: 'idle',
+    github: 'idle'
+  })
+  const [connectionMessage, setConnectionMessage] = useState<Record<PlatformKey, string>>({
+    gitlab: '',
+    github: ''
+  })
 
   useEffect(() => {
     fetchConfig()
@@ -21,44 +33,80 @@ export default function Admin() {
   useEffect(() => {
     if (config) {
       setActiveTab(config.platform)
-      const platformConfig = activeTab === 'gitlab' ? config.gitlab : config.github
-      setInstanceUrl(platformConfig.instanceUrl)
-      setToken(platformConfig.token)
-      setConnectionStatus('idle')
+      setDrafts(prev => ({
+        gitlab: {
+          instanceUrl: config.gitlab.instanceUrl,
+          token: config.gitlab.token,
+          repoInput: prev.gitlab.repoInput
+        },
+        github: {
+          instanceUrl: config.github.instanceUrl,
+          token: config.github.token,
+          repoInput: prev.github.repoInput
+        }
+      }))
+      setConnectionStatus({
+        gitlab: 'idle',
+        github: 'idle'
+      })
     }
-  }, [config, activeTab])
+  }, [config])
 
-  const handleTabChange = async (tab: 'gitlab' | 'github') => {
+  const currentDraft = drafts[activeTab]
+  const currentConnectionStatus = connectionStatus[activeTab]
+  const currentConnectionMessage = connectionMessage[activeTab]
+
+  const updateDraft = (platform: PlatformKey, patch: Partial<DraftState[PlatformKey]>) => {
+    setDrafts(prev => ({
+      ...prev,
+      [platform]: {
+        ...prev[platform],
+        ...patch
+      }
+    }))
+  }
+
+  const handleTabChange = async (tab: PlatformKey) => {
     if (tab === activeTab) return
     setActiveTab(tab)
+    setShowToken(false)
+    setConnectionStatus(prev => ({ ...prev, [tab]: 'idle' }))
     await switchPlatform(tab)
   }
 
   const handleSaveConfig = async () => {
-    const success = await updateConfig(activeTab, instanceUrl, token)
+    const success = await updateConfig(activeTab, currentDraft.instanceUrl, currentDraft.token)
     if (success) {
+      setConnectionStatus(prev => ({ ...prev, [activeTab]: 'idle' }))
       alert('配置保存成功！')
+    } else {
+      alert(useConfigStore.getState().error || '配置保存失败')
     }
   }
 
   const handleTestConnection = async () => {
-    setConnectionStatus('testing')
-    const success = await testConnection(activeTab, instanceUrl, token)
-    setConnectionStatus(success ? 'success' : 'error')
+    setConnectionStatus(prev => ({ ...prev, [activeTab]: 'testing' }))
+    setConnectionMessage(prev => ({ ...prev, [activeTab]: '' }))
+
+    const success = await testConnection(activeTab, currentDraft.instanceUrl, currentDraft.token)
+    const message = success ? '' : (useConfigStore.getState().error || '连接失败，请检查实例地址、网络和 Token')
+
+    setConnectionStatus(prev => ({ ...prev, [activeTab]: success ? 'success' : 'error' }))
+    setConnectionMessage(prev => ({ ...prev, [activeTab]: message }))
   }
 
   const handleAddRepo = async () => {
-    if (!repoInput.trim()) return
-    const success = await addRepository(activeTab, repoInput.trim())
+    if (!currentDraft.repoInput.trim()) return
+    const success = await addRepository(activeTab, currentDraft.repoInput.trim())
     if (success) {
-      setRepoInput('')
+      updateDraft(activeTab, { repoInput: '' })
     } else {
       alert(useConfigStore.getState().error || '添加失败')
     }
   }
 
   const getStatusDisplay = () => {
-    switch (connectionStatus) {
+    switch (currentConnectionStatus) {
       case 'testing': return <div className="text-blue-500 font-bold text-sm">测试中...</div>
       case 'success': return <div className="bg-white px-4 py-2 rounded-full shadow-sm flex items-center gap-2 text-sm font-bold text-[#10B981] border border-[#10B981]/20"><div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></div>已连接</div>
       case 'error': return <div className="text-red-500 font-bold text-sm">连接失败</div>
@@ -147,8 +195,8 @@ export default function Admin() {
                   </label>
                   <input
                     type="text"
-                    value={instanceUrl}
-                    onChange={e => setInstanceUrl(e.target.value)}
+                    value={currentDraft.instanceUrl}
+                    onChange={e => updateDraft(activeTab, { instanceUrl: e.target.value })}
                     placeholder={activeTab === 'gitlab' ? 'https://gitlab.com' : 'https://github.com'}
                     className="soft-input"
                   />
@@ -158,8 +206,8 @@ export default function Admin() {
                   <div className="relative">
                     <input
                       type={showToken ? "text" : "password"}
-                      value={token}
-                      onChange={e => setToken(e.target.value)}
+                      value={currentDraft.token}
+                      onChange={e => updateDraft(activeTab, { token: e.target.value })}
                       className="soft-input font-mono"
                     />
                     <button
@@ -180,6 +228,11 @@ export default function Admin() {
                     保存配置
                   </button>
                 </div>
+                {currentConnectionStatus === 'error' && currentConnectionMessage && (
+                  <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-500">
+                    {currentConnectionMessage}
+                  </div>
+                )}
               </div>
             </section>
 
@@ -209,8 +262,8 @@ export default function Admin() {
                       type="text"
                       placeholder={activeTab === 'gitlab' ? '例如: 12345 或 group/project' : '例如: owner/repository'}
                       className="soft-input"
-                      value={repoInput}
-                      onChange={e => setRepoInput(e.target.value)}
+                      value={currentDraft.repoInput}
+                      onChange={e => updateDraft(activeTab, { repoInput: e.target.value })}
                       onKeyDown={e => e.key === 'Enter' && handleAddRepo()}
                     />
                   </div>

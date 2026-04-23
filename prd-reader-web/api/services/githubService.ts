@@ -1,3 +1,10 @@
+const REQUEST_TIMEOUT_MS = 8000
+
+export interface ConnectionTestResult {
+  success: boolean
+  error?: string
+}
+
 const getApiUrl = (url: string): string => {
   const cleanUrl = url.replace(/\/$/, '')
   if (cleanUrl === 'https://github.com' || cleanUrl === 'http://github.com') {
@@ -6,19 +13,44 @@ const getApiUrl = (url: string): string => {
   return `${cleanUrl}/api/v3`
 }
 
-export const testGithubConnection = async (url: string, token: string): Promise<boolean> => {
+const fetchWithTimeout = async (input: string, init?: RequestInit) => {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+export const testGithubConnection = async (url: string, token: string): Promise<ConnectionTestResult> => {
   try {
     const apiUrl = getApiUrl(url)
-    const response = await fetch(`${apiUrl}/user`, {
+    const response = await fetchWithTimeout(`${apiUrl}/user`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/vnd.github.v3+json'
       }
     })
-    return response.ok
+
+    if (response.ok) {
+      return { success: true }
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      return { success: false, error: 'GitHub Token 无效或权限不足' }
+    }
+
+    return { success: false, error: `GitHub 连接失败 (${response.status})` }
   } catch (e) {
     console.error('GitHub connection test failed:', e)
-    return false
+
+    if (e instanceof Error && e.name === 'AbortError') {
+      return { success: false, error: 'GitHub 连接超时，请检查公网访问或代理配置' }
+    }
+
+    return { success: false, error: 'GitHub 连接失败，请检查实例地址和网络' }
   }
 }
 

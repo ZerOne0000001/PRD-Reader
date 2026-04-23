@@ -100,6 +100,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
   },
 
   testConnection: async (platform: 'gitlab' | 'github', instanceUrl: string, token: string) => {
+    set({ loading: true, error: null })
     try {
       const res = await fetch('/api/config/test', {
         method: 'POST',
@@ -107,8 +108,16 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
         body: JSON.stringify({ platform, instanceUrl, token })
       })
       const data = await res.json()
-      return data.success
-    } catch (e) {
+
+      if (data.success) {
+        set({ loading: false, error: null })
+        return true
+      }
+
+      set({ loading: false, error: data.error || '连接失败' })
+      return false
+    } catch (e: any) {
+      set({ loading: false, error: e.message || '连接失败' })
       return false
     }
   },

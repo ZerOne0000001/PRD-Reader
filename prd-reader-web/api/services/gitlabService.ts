@@ -1,13 +1,44 @@
-export const testGitlabConnection = async (url: string, token: string): Promise<boolean> => {
+const REQUEST_TIMEOUT_MS = 8000
+
+export interface ConnectionTestResult {
+  success: boolean
+  error?: string
+}
+
+const fetchWithTimeout = async (input: string, init?: RequestInit) => {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+export const testGitlabConnection = async (url: string, token: string): Promise<ConnectionTestResult> => {
   try {
     const cleanUrl = url.replace(/\/$/, '')
-    // 校验连接, 推荐使用 /api/v4/user 而不是 /api/v4/version，因为某些版本 version 需要管理员权限
-    const response = await fetch(`${cleanUrl}/api/v4/user`, {
+    // 用 /user 校验 token 权限，比 /version 更能反映真实可用性。
+    const response = await fetchWithTimeout(`${cleanUrl}/api/v4/user`, {
       headers: { 'PRIVATE-TOKEN': token }
     })
-    return response.ok
+
+    if (response.ok) {
+      return { success: true }
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      return { success: false, error: 'GitLab Token 无效、权限不足，或内网实例不允许当前访问' }
+    }
+
+    return { success: false, error: `GitLab 连接失败 (${response.status})` }
   } catch (e) {
-    return false
+    if (e instanceof Error && e.name === 'AbortError') {
+      return { success: false, error: 'GitLab 连接超时，请检查内网地址、VPN 或安全组配置' }
+    }
+
+    return { success: false, error: 'GitLab 连接失败，请检查实例地址和网络' }
   }
 }
 
