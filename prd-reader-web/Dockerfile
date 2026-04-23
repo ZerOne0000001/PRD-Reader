@@ -1,7 +1,7 @@
 # ==========================================
 # Stage 1: Build & Dependencies
 # ==========================================
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # 1. 拷贝 package.json 和 lock 文件
@@ -17,7 +17,7 @@ RUN npm run build
 # ==========================================
 # Stage 2: Backend (Node.js)
 # ==========================================
-FROM node:20-alpine AS backend
+FROM node:22-alpine AS backend
 WORKDIR /app
 
 # 从 builder 阶段拷贝所有文件 (因为我们要用 tsx 运行 ts 源码，所以连源码一起保留)
